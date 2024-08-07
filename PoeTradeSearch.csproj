@@ -112,7 +112,6 @@
     </Compile>
     <Compile Include="Methods.cs" />
     <Compile Include="Configure.cs" />
-    <!-- <Compile Include="test.cs" /> -->
     <Compile Include="Updates.cs" />
     <Compile Include="WinSetting.xaml.cs">
       <DependentUpon>WinSetting.xaml</DependentUpon>

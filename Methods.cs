@@ -218,6 +218,11 @@ namespace PoeTradeSearch
                     is_multi_line = true;
                     options.Add(tmp[0 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[1 + (is_deep == 0 ? 1 : 0)]);
                 }
+                if (tmp.Length == (is_deep == 0 ? 4 : 3))
+                {
+                    is_multi_line = true;
+                    options.Add(tmp[0 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[1 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[2 + (is_deep == 0 ? 1 : 0)]);
+                }
 
                 for (int ssi = 0; ssi < tmp.Length - (is_deep == 0 ? 1 : 0); ssi++)
                 {
@@ -608,8 +613,20 @@ namespace PoeTradeSearch
                     }
 
                     string item_rarity = rarity.Text[0];
-                    string item_name = ibase_info[2];
-                    string item_type = ibase_info[3];
+                    string item_name = "";
+                    string item_type = "";
+                    bool is_memory = false;
+                    if (ibase_info[3].Contains("의 기억")) {
+                        item_name = ibase_info[3];
+                        item_type = ibase_info[3].Substring(0, (ibase_info[3].IndexOf("의 기억") + 4));
+                        is_memory = true;
+                    }
+                    else
+                    {
+                        item_name = ibase_info[2];
+                        item_type = ibase_info[3];
+                    }
+
 
                     int alt_quality = 0;
                     bool is_blight = false;
