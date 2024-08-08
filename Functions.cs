@@ -306,23 +306,6 @@ namespace PoeTradeSearch
 
     public partial class WinMain : Window
     {
-        private double DamageToDPS(string damage)
-        {
-            double dps = 0;
-            try
-            {
-                string[] stmps = Regex.Replace(damage, @"\([a-zA-Z]+\)", "").Split(',');
-                for (int t = 0; t < stmps.Length; t++)
-                {
-                    string[] maidps = (stmps[t] ?? "").Trim().Split('-');
-                    if (maidps.Length == 2)
-                        dps += double.Parse(maidps[0].Trim()) + double.Parse(maidps[1].Trim());
-                }
-            }
-            catch { }
-            return dps;
-        }
-
         internal string SendHTTP(string entity, string urlString, int timeout = 5, Cookie cookie = null)
         {
             string result = "";

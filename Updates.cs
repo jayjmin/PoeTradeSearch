@@ -95,7 +95,7 @@ namespace PoeTradeSearch
                         rootClass.Update = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                         using (StreamWriter writer = new StreamWriter(path + (isKR ? "FiltersKO.txt" : "FiltersEN.txt"), false, Encoding.UTF8))
                         {
-                            writer.Write(Json.Serialize<FilterData>(rootClass));
+                            writer.Write(Json.Serialize<FilterData>(rootClass, true));
                             writer.Close();
                         }
 
@@ -130,7 +130,7 @@ namespace PoeTradeSearch
                         rootClass.Update = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                         using (StreamWriter writer = new StreamWriter(path + (isKR ? "ItemsKO.txt" : "ItemsEN.txt"), false, Encoding.UTF8))
                         {
-                            writer.Write(Json.Serialize<FilterData>(rootClass));
+                            writer.Write(Json.Serialize<FilterData>(rootClass, true));
                             writer.Close();
                         }
 
@@ -165,7 +165,7 @@ namespace PoeTradeSearch
                         rootClass.Update = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                         using (StreamWriter writer = new StreamWriter(path + (isKR ? "StaticKO.txt" : "StaticEN.txt"), false, Encoding.UTF8))
                         {
-                            writer.Write(Json.Serialize<FilterData>(rootClass));
+                            writer.Write(Json.Serialize<FilterData>(rootClass, true));
                             writer.Close();
                         }
 

@@ -129,33 +129,7 @@ namespace PoeTradeSearch
 
         private void setDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
         {
-            // DPS 계산 POE-TradeMacro 참고
-            double physicalDPS = DamageToDPS(physical);
-            double elementalDPS = DamageToDPS(elemental);
-            double chaosDPS = DamageToDPS(chaos);
-
-            double quality20Dps = quality == "" ? 0 : quality.ToDouble(0);
-            double attacksPerSecond = Regex.Replace(perSecond, "[^0-9.]", "").ToDouble(0);
-
-            if (speedIncr > 0)
-            {
-                double baseAttackSpeed = attacksPerSecond / (speedIncr / 100 + 1);
-                double modVal = baseAttackSpeed % 0.05;
-                baseAttackSpeed += modVal > 0.025 ? (0.05 - modVal) : -modVal;
-                attacksPerSecond = baseAttackSpeed * (speedIncr / 100 + 1);
-            }
-
-            physicalDPS = (physicalDPS / 2) * attacksPerSecond;
-            elementalDPS = (elementalDPS / 2) * attacksPerSecond;
-            chaosDPS = (chaosDPS / 2) * attacksPerSecond;
-
-            //20 퀄리티 보다 낮을땐 20 퀄리티 기준으로 계산
-            quality20Dps = quality20Dps < 20 ? physicalDPS * (phyDmgIncr + 120) / (phyDmgIncr + quality20Dps + 100) : 0;
-            physicalDPS = quality20Dps > 0 ? quality20Dps : physicalDPS;
-
-            lbDPS.Content = "DPS: P." + Math.Round(physicalDPS, 2).ToString() +
-                            " + E." + Math.Round(elementalDPS, 2).ToString() +
-                            " = T." + Math.Round(physicalDPS + elementalDPS + chaosDPS, 2).ToString();
+            lbDPS.Content = ParserHelper.calcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
         }
 
         private void Deduplicationfilter(List<Itemfilter> itemfilters)
@@ -247,13 +221,13 @@ namespace PoeTradeSearch
                     ResetControls();
 
                     // language. 0: korean, 1: english
-                    byte z = (byte)(asData[0].IndexOf(PS.Category.Text[0] + ": ") == 0 ? 0 : 1);
+                    byte lang = (byte)(asData[0].IndexOf(PS.Category.Text[0] + ": ") == 0 ? 0 : 1);
                     // 베이스 찾기. 종류(갑옷, 장갑 등), 희귀도(마법, 희귀 등), 이름, 베이스로 배열이 생성되어 들어감
                     string[] ibase_info = ItemBaseParser(asData[0].Trim().Split(new string[] { "\r\n" }, StringSplitOptions.None));
 
-                    ParserDictItem category = Array.Find(PS.Category.Entries, x => x.Text[z] == ibase_info[0]); // category
+                    ParserDictItem category = Array.Find(PS.Category.Entries, x => x.Text[lang] == ibase_info[0]); // category
                     string[] cate_ids = category != null ? category.Id.Split('.') : new string[] { "" }; // ex) {"id":"armour.chest","key":"armour","text":[ "갑옷", "Body Armours" ]}
-                    ParserDictItem rarity = Array.Find(PS.Rarity.Entries, x => x.Text[z] == ibase_info[1]); // rarity
+                    ParserDictItem rarity = Array.Find(PS.Rarity.Entries, x => x.Text[lang] == ibase_info[1]); // rarity
                     rarity = rarity == null ? new ParserDictItem() { Id = "", Text = new string[] { ibase_info[1], ibase_info[1] } } : rarity; // ex) {"id":"rare","text":[ "희귀", "Rare" ]}
 
                     int k = 0;
@@ -263,13 +237,13 @@ namespace PoeTradeSearch
 
                     Dictionary<string, string> lItemOption = new Dictionary<string, string>()
                     {
-                        { PS.Quality.Text[z], "" }, { PS.Level.Text[z], "" }, { PS.ItemLevel.Text[z], "" }, { PS.TalismanTier.Text[z], "" }, { PS.MapTier.Text[z], "" },
-                        { PS.Sockets.Text[z], "" }, { PS.Heist.Text[z], "" }, { PS.MapUltimatum.Text[z], "" }, { PS.RewardUltimatum.Text[z], "" },
-                        { PS.Radius.Text[z], "" },  { PS.DeliriumReward.Text[z], "" }, { PS.MonsterGenus.Text[z], "" }, { PS.MonsterGroup.Text[z], "" },
-                        { PS.PhysicalDamage.Text[z], "" }, { PS.ElementalDamage.Text[z], "" }, { PS.ChaosDamage.Text[z], "" }, { PS.AttacksPerSecond.Text[z], "" },
-                        { PS.ShaperItem.Text[z], "" }, { PS.ElderItem.Text[z], "" }, { PS.CrusaderItem.Text[z], "" }, { PS.RedeemerItem.Text[z], "" },
-                        { PS.HunterItem.Text[z], "" }, { PS.WarlordItem.Text[z], "" }, { PS.SynthesisedItem.Text[z], "" },
-                        { PS.Corrupted.Text[z], "" }, { PS.Unidentified.Text[z], "" }, { PS.ProphecyItem.Text[z], "" }, { PS.Vaal.Text[z] + " " + ibase_info[3], "" }
+                        { PS.Quality.Text[lang], "" }, { PS.Level.Text[lang], "" }, { PS.ItemLevel.Text[lang], "" }, { PS.TalismanTier.Text[lang], "" }, { PS.MapTier.Text[lang], "" },
+                        { PS.Sockets.Text[lang], "" }, { PS.Heist.Text[lang], "" }, { PS.MapUltimatum.Text[lang], "" }, { PS.RewardUltimatum.Text[lang], "" },
+                        { PS.Radius.Text[lang], "" },  { PS.DeliriumReward.Text[lang], "" }, { PS.MonsterGenus.Text[lang], "" }, { PS.MonsterGroup.Text[lang], "" },
+                        { PS.PhysicalDamage.Text[lang], "" }, { PS.ElementalDamage.Text[lang], "" }, { PS.ChaosDamage.Text[lang], "" }, { PS.AttacksPerSecond.Text[lang], "" },
+                        { PS.ShaperItem.Text[lang], "" }, { PS.ElderItem.Text[lang], "" }, { PS.CrusaderItem.Text[lang], "" }, { PS.RedeemerItem.Text[lang], "" },
+                        { PS.HunterItem.Text[lang], "" }, { PS.WarlordItem.Text[lang], "" }, { PS.SynthesisedItem.Text[lang], "" },
+                        { PS.Corrupted.Text[lang], "" }, { PS.Unidentified.Text[lang], "" }, { PS.ProphecyItem.Text[lang], "" }, { PS.Vaal.Text[lang] + " " + ibase_info[3], "" }
                     };
 
                     // 시즌이 지날수록 땜질을 많이해 점점 복잡지는 소스 언제 정리하지?...
@@ -283,7 +257,7 @@ namespace PoeTradeSearch
 
                             int is_deep = -1;
                             bool is_multi_line = false;
-                            List<string> options = ItemOptionParser(asOpts[j], PS.OptionTier.Text[z], ref is_deep, ref is_multi_line);
+                            List<string> options = ItemOptionParser(asOpts[j], PS.OptionTier.Text[lang], ref is_deep, ref is_multi_line);
 
                             for (int o = 0; o < options.Count; o++)
                             {
@@ -293,13 +267,13 @@ namespace PoeTradeSearch
                                 {
                                     if (lItemOption[asSplit[0]] == "") lItemOption[asSplit[0]] = asSplit.Length > 1 ? asSplit[1] : "_TRUE_";
                                 }
-                                else if (k < 10 && (!lItemOption[PS.ItemLevel.Text[z]].IsEmpty() || !lItemOption[PS.MapUltimatum.Text[z]].IsEmpty()))
+                                else if (k < 10 && (!lItemOption[PS.ItemLevel.Text[lang]].IsEmpty() || !lItemOption[PS.MapUltimatum.Text[lang]].IsEmpty()))
                                 {
                                     string input = options[o].RepEx(@"\s(\([a-zA-Z]+\)|—\s.+)$", "");
                                     string ft_type = options[o].Split(new string[] { "\n" }, 0)[0].RepEx(@"(.+)\s\(([a-zA-Z]+)\)$", "$2");
                                     if (!RS.lFilterType.ContainsKey(ft_type)) ft_type = "_none_"; // 영향력 검사???
 
-                                    bool _resistance = false; // 저항
+                                    bool hasResistance = false; // 저항
                                     double min = 99999, max = 99999;
                                     ParserDictItem special_option = null;
 
@@ -308,7 +282,7 @@ namespace PoeTradeSearch
                                         string pats = "";
                                         foreach (ParserDictItem item in PS.MapTier.Entries)
                                         {
-                                            pats += item.Text[z] + "|";
+                                            pats += item.Text[lang] + "|";
                                         }
                                         Match match = Regex.Match(input.Trim(), "(.+) (" + pats + "_none_)(.*)");
                                         if (match.Success)
@@ -322,29 +296,29 @@ namespace PoeTradeSearch
                                     {
                                         if (ft_type == "implicit" && cate_ids.Length == 1 && cate_ids[0] == "logbook")
                                         {
-                                            special_option = Array.Find(PS.Logbook.Entries, x => x.Text[z] == input);
+                                            special_option = Array.Find(PS.Logbook.Entries, x => x.Text[lang] == input);
                                             if (special_option != null)
                                             {
-                                                input = PS.Logbook.Text[z];
+                                                input = PS.Logbook.Text[lang];
                                                 special_option.Key = "LOGBOOK";
                                             }
                                         }
                                         else if (ft_type == "enchant" && asSplit.Length > 1 && cate_ids.Length == 2 && cate_ids[0] == "jewel")
                                         {
                                             string tmp2 = input.Split(':')?[1].Trim().RepEx(@"[0-9]+\%", "#%");
-                                            special_option = Array.Find(PS.Cluster.Entries, x => x.Text[z] == tmp2);
+                                            special_option = Array.Find(PS.Cluster.Entries, x => x.Text[lang] == tmp2);
                                             if (special_option != null)
                                             {
                                                 input = asSplit[0] + ": #";
                                                 special_option.Key = "CLUSTER";
                                             }
                                         }
-                                        else if (ft_type == "_none_" && lItemOption[PS.Radius.Text[z]] != "")
+                                        else if (ft_type == "_none_" && lItemOption[PS.Radius.Text[lang]] != "")
                                         {
-                                            special_option = Array.Find(PS.Radius.Entries, x => x.Text[z] == asSplit[0]);
+                                            special_option = Array.Find(PS.Radius.Entries, x => x.Text[lang] == asSplit[0]);
                                             if (special_option != null)
                                             {
-                                                lItemOption[PS.Radius.Text[z]] = RS.lRadius.Entries[special_option.Id.ToInt() - 1].Text[z];
+                                                lItemOption[PS.Radius.Text[lang]] = RS.lRadius.Entries[special_option.Id.ToInt() - 1].Text[lang];
                                                 special_option.Key = "RADIUS";
                                             }
                                         }
@@ -355,129 +329,19 @@ namespace PoeTradeSearch
 
                                     bool local_exists = false;
                                     FilterDictItem filter = null;
+                                    string dataLabel = null;
 
-                                    foreach (FilterDict data_result in mFilter[z].Result)
-                                    {
-                                        Regex rgx = new Regex("^" + input + "$", RegexOptions.IgnoreCase);
-                                        FilterDictItem[] entries = Array.FindAll(data_result.Entries, x => rgx.IsMatch(x.Text));
-                                        // "동작 속도 #% 증가" 처럼, 내부적으로는 음수로 계산할 경우를 위해
-                                        bool reverseFlag = false;
-                                        for (int l = 0; l < PS.ReverseIncreaseDecrease.Entries.Length; l++)
-                                        {
-                                            if (input.Contains(PS.ReverseIncreaseDecrease.Entries[l].Text[z]))
-                                            {
-                                                string input_tmp = Regex.Replace(input, PS.ReverseIncreaseDecrease.Entries[l].Text[z], PS.ReverseIncreaseDecrease.Entries[l%2==0?l+1:l-1].Text[z]);
-                                                Regex rgx_tmp = new Regex("^" + input_tmp + "$", RegexOptions.IgnoreCase);
-                                                FilterDictItem[] entries_tmp = Array.FindAll(data_result.Entries, x => rgx_tmp.IsMatch(x.Text));
-                                                if (entries_tmp.Length > 0)
-                                                {
-                                                    if (entries.Length == 0) reverseFlag = true;
-                                                    entries = entries.Concat(entries_tmp).ToArray();
-                                                }
-                                                break;
-                                            }
-                                        }
-
-                                        // 2개 이상 같은 옵션이 있을때 장비 옵션 (특정) 만 추출
-                                        if (entries.Length > 1)
-                                        {
-                                            FilterDictItem[] entries_tmp = Array.FindAll(entries, x => x.Part == cate_ids[0]);
-                                            // 화살통 제외
-                                            if (entries_tmp.Length > 0 && (cate_ids.Length == 1 || cate_ids[1] != "quiver"))
-                                            {
-                                                local_exists = true;
-                                                entries = entries_tmp;
-                                            }
-                                            else
-                                            {
-                                                entries = Array.FindAll(entries, x => x.Part == null);
-                                            }
-                                        }
-
-                                        if (entries.Length > 0)
-                                        {
-                                            Array.Sort(entries, delegate (FilterDictItem entrie1, FilterDictItem entrie2)
-                                            {
-                                                return (entrie2.Part ?? "").CompareTo(entrie1.Part ?? "");
-                                            });
-
-                                            MatchCollection matches1 = Regex.Matches(options[o], @"[-]?([0-9]+\.[0-9]+|[0-9]+)");
-                                            foreach (FilterDictItem entrie in entries)
-                                            {
-                                                int idxMin = 0, idxMax = 0;
-                                                bool isMin = false, isMax = false;
-                                                bool isBreak = true;
-
-                                                MatchCollection matches2 = Regex.Matches(entrie.Text.Split('\n')[0], @"[-]?([0-9]+\.[0-9]+|[0-9]+|#)");
-
-                                                for (int t = 0; t < matches2.Count; t++)
-                                                {
-                                                    if (matches2[t].Value == "#")
-                                                    {
-                                                        if (reverseFlag)
-                                                        {
-                                                            if (!isMax)
-                                                            {
-                                                                isMax = true;
-                                                                idxMax = t;
-                                                            }
-                                                            else if (!isMin)
-                                                            {
-                                                                isMin = true;
-                                                                idxMin = t;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            if (!isMin)
-                                                            {
-                                                                isMin = true;
-                                                                idxMin = t;
-                                                            }
-                                                            else if (!isMax)
-                                                            {
-                                                                isMax = true;
-                                                                idxMax = t;
-                                                            }
-                                                        }
-                                                    }
-                                                    else if (matches1[t].Value != matches2[t].Value)
-                                                    {
-                                                        isBreak = false;
-                                                        break;
-                                                    }
-                                                }
-
-                                                if (isBreak)
-                                                {
-                                                    string[] id_split = entrie.Id.Split('.');
-                                                    (FindName("cbOpt" + k) as ComboBox).Items.Add(new FilterEntrie(cate_ids[0], id_split[0], id_split[1], data_result.Label));
-
-                                                    if (filter == null)
-                                                    {
-                                                        filter = entrie;
-                                                        _resistance = id_split.Length == 2 && RS.lResistance.ContainsKey(id_split[1]);
-                                                        if (reverseFlag)
-                                                        {
-                                                            max = isMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) * -1 : -99999;
-                                                            min = isMin && idxMax > idxMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) * -1 : 99999;
-                                                        }
-                                                        else
-                                                        {
-                                                            min = isMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) : 99999;
-                                                            max = isMax && idxMin < idxMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) : 99999;
-                                                        }
-                                                    }
-
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-
+                                    /////////////////////
+                                    // Split
+                                    /////////////////////
+                                    (filter, min, max, local_exists, hasResistance, dataLabel) = ParserHelper.findFilterDictItem(input, mFilter, lang, cate_ids, options[o], PS);
                                     if (filter != null)
                                     {
                                         string[] split_id = filter.Id.Split('.');
+
+                                        (FindName("cbOpt" + k) as ComboBox).Items.Add(new FilterEntrie(cate_ids[0], split_id[0], split_id[1], dataLabel));
+
+
                                         Dictionary<string, SolidColorBrush> color = new Dictionary<string, SolidColorBrush>()
                                         {
                                             { "implicit", Brushes.DarkRed }, { "crafted", Brushes.Blue }, { "enchant", Brushes.Blue }, { "scourge", Brushes.DarkOrange }
@@ -512,7 +376,7 @@ namespace PoeTradeSearch
                                         }
 
                                         // 평균
-                                        if (min != 99999 && max != 99999 && filter.Text.IndexOf("#" + (z == 0 ? "~" : " to ") + "#") > -1)
+                                        if (min != 99999 && max != 99999 && filter.Text.IndexOf("#" + (lang == 0 ? "~" : " to ") + "#") > -1)
                                         {
                                             min += max;
                                             min = Math.Truncate(min / 2 * 10) / 10;
@@ -540,13 +404,13 @@ namespace PoeTradeSearch
 
                                         (FindName("tbOpt" + k) as TextBox).Text = (is_deep > 0 ? is_deep.ToString() + ") " : "") + filter.Text;
 
-                                        (FindName("tbOpt" + k + "_3") as CheckBox).Visibility = _resistance ? Visibility.Visible : Visibility.Hidden;
+                                        (FindName("tbOpt" + k + "_3") as CheckBox).Visibility = hasResistance ? Visibility.Visible : Visibility.Hidden;
                                         if ((FindName("tbOpt" + k + "_3") as CheckBox).Visibility == Visibility.Visible && mConfig.Options.AutoCheckTotalres)
                                             (FindName("tbOpt" + k + "_3") as CheckBox).IsChecked = true;
 
                                         if (special_option != null && (special_option.Key == "CLUSTER" || special_option.Key == "LOGBOOK"))
                                         {
-                                            (FindName("tbOpt" + k) as TextBox).Text = special_option.Text[z];
+                                            (FindName("tbOpt" + k) as TextBox).Text = special_option.Text[lang];
                                             (FindName("tbOpt" + k) as TextBox).Tag = special_option.Key;
                                             (FindName("tbOpt" + k + "_0") as TextBox).IsEnabled = false;
                                             (FindName("tbOpt" + k + "_1") as TextBox).IsEnabled = false;
@@ -579,8 +443,8 @@ namespace PoeTradeSearch
                                         (FindName("tbOpt" + k + "_0") as TextBox).Text = min == 99999 ? "" : min.ToString();
                                         (FindName("tbOpt" + k + "_1") as TextBox).Text = max == 99999 ? "" : max.ToString();
 
-                                        attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[z] && min.WithIn(1, 999) ? min : 0;
-                                        PhysicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[z] && min.WithIn(1, 9999) ? min : 0;
+                                        attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[lang] && min.WithIn(1, 999) ? min : 0;
+                                        PhysicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
 
                                         string[] strs_tmp = (FindName("tbOpt" + k) as TextBox).Text.Split('\n');
                                         if (strs_tmp.Length > 1)
@@ -631,70 +495,70 @@ namespace PoeTradeSearch
                     int alt_quality = 0;
                     bool is_blight = false;
 
-                    bool is_map = cate_ids[0] == "map"; // || lItemOption[PS.MapTier.Text[z]] != "";
+                    bool is_map = cate_ids[0] == "map"; // || lItemOption[PS.MapTier.Text[lang]] != "";
                     bool is_map_fragment = cate_ids.Length > 1 && cate_ids.Join('.') == "map.fragment";
-                    bool is_map_ultimatum = lItemOption[PS.MapUltimatum.Text[z]] != "";
-                    bool is_prophecy = lItemOption[PS.ProphecyItem.Text[z]] == "_TRUE_";
+                    bool is_map_ultimatum = lItemOption[PS.MapUltimatum.Text[lang]] != "";
+                    bool is_prophecy = lItemOption[PS.ProphecyItem.Text[lang]] == "_TRUE_";
                     bool is_currency = rarity.Id == "currency";
                     bool is_divination_card = rarity.Id == "card";
                     bool is_gem = rarity.Id == "gem";
                     bool is_Jewel = cate_ids[0] == "jewel";
-                    bool is_vaal_gem = is_gem && lItemOption[PS.Vaal.Text[z] + " " + item_type] == "_TRUE_";
-                    bool is_heist = lItemOption[PS.Heist.Text[z]] != "";
-                    bool is_unIdentify = lItemOption[PS.Unidentified.Text[z]] == "_TRUE_";
+                    bool is_vaal_gem = is_gem && lItemOption[PS.Vaal.Text[lang] + " " + item_type] == "_TRUE_";
+                    bool is_heist = lItemOption[PS.Heist.Text[lang]] != "";
+                    bool is_unIdentify = lItemOption[PS.Unidentified.Text[lang]] == "_TRUE_";
                     bool is_detail = is_gem || is_map_fragment || (!is_map_ultimatum && is_currency) || is_divination_card || is_prophecy;
 
                     int item_idx = -1;
-                    int cate_idx = category != null ? Array.FindIndex(mItems[z].Result, x => x.Id.Equals(category.Key)) : -1;
+                    int cate_idx = category != null ? Array.FindIndex(mItems[lang].Result, x => x.Id.Equals(category.Key)) : -1;
 
                     if (is_prophecy)
                     {
                         cate_ids = new string[] { "prophecy" };
-                        item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "prophecy").Text[z];
-                        item_idx = Array.FindIndex(mItems[z].Result[cate_idx].Entries, x => x.Type == item_type);
+                        item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "prophecy").Text[lang];
+                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Type == item_type);
                     }
                     if (is_map_fragment || is_map_ultimatum)
                     {
-                        item_rarity = is_map_ultimatum ? "결전" : Array.Find(PS.Category.Entries, x => x.Id == "map.fragment").Text[z];
-                        item_idx = Array.FindIndex(mItems[z].Result[cate_idx].Entries, x => x.Type == item_type);
+                        item_rarity = is_map_ultimatum ? "결전" : Array.Find(PS.Category.Entries, x => x.Id == "map.fragment").Text[lang];
+                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Type == item_type);
                     }
-                    else if (lItemOption[PS.MonsterGenus.Text[z]] != "" && lItemOption[PS.MonsterGroup.Text[z]] != "")
+                    else if (lItemOption[PS.MonsterGenus.Text[lang]] != "" && lItemOption[PS.MonsterGroup.Text[lang]] != "")
                     {
                         cate_ids = new string[] { "monster", "beast" };
-                        cate_idx = Array.FindIndex(mItems[z].Result, x => x.Id.Equals("monsters"));
-                        item_idx = Array.FindIndex(mItems[z].Result[cate_idx].Entries, x => x.Text == item_type);
-                        item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "monster.beast").Text[z];
-                        item_type = z == 1 || item_idx == -1 ? item_type : mItems[1].Result[cate_idx].Entries[item_idx].Type;
+                        cate_idx = Array.FindIndex(mItems[lang].Result, x => x.Id.Equals("monsters"));
+                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Text == item_type);
+                        item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "monster.beast").Text[lang];
+                        item_type = lang == 1 || item_idx == -1 ? item_type : mItems[1].Result[cate_idx].Entries[item_idx].Type;
                         item_idx = -1; // 야수는 영어로만 검색됨...
                     }
                     else if (cate_idx > -1)
                     {
-                        FilterDict data = mItems[z].Result[cate_idx];
+                        FilterDict data = mItems[lang].Result[cate_idx];
 
-                        if ((is_unIdentify || rarity.Id == "normal") && item_type.Length > 4 && item_type.IndexOf(PS.Superior.Text[z] + " ") == 0)
+                        if ((is_unIdentify || rarity.Id == "normal") && item_type.Length > 4 && item_type.IndexOf(PS.Superior.Text[lang] + " ") == 0)
                         {
-                            item_type = item_type.Substring(z == 1 ? 9 : 3);
+                            item_type = item_type.Substring(lang == 1 ? 9 : 3);
                         }
                         else if (rarity.Id == "magic")
                         {
-                            item_type = item_type.Split(new string[] { z == 1 ? " of " : " - " }, StringSplitOptions.None)[0].Trim();
+                            item_type = item_type.Split(new string[] { lang == 1 ? " of " : " - " }, StringSplitOptions.None)[0].Trim();
                         }
 
                         if (is_gem)
                         {
                             for (int i = 0; i < PS.Gems.Entries.Length; i++)
                             {
-                                int pos = item_type.IndexOf(PS.Gems.Entries[i].Text[z] + " ");
+                                int pos = item_type.IndexOf(PS.Gems.Entries[i].Text[lang] + " ");
                                 if (pos == 0)
                                 {
                                     alt_quality = i + 1;
-                                    item_type = item_type.Substring(PS.Gems.Entries[i].Text[z].Length + 1);
+                                    item_type = item_type.Substring(PS.Gems.Entries[i].Text[lang].Length + 1);
                                 }
                             }
 
-                            if (is_vaal_gem && lItemOption[PS.Corrupted.Text[z]] == "_TRUE_")
+                            if (is_vaal_gem && lItemOption[PS.Corrupted.Text[lang]] == "_TRUE_")
                             {
-                                FilterDictItem entries = Array.Find(data.Entries, x => x.Text.Equals(PS.Vaal.Text[z] + " " + item_type));
+                                FilterDictItem entries = Array.Find(data.Entries, x => x.Text.Equals(PS.Vaal.Text[lang] + " " + item_type));
                                 if (entries != null) item_type = entries.Type;
                             }
                         }
@@ -702,17 +566,17 @@ namespace PoeTradeSearch
                         {
                             if (item_type.Length > 5)
                             {
-                                if (item_type.IndexOf(PS.Blighted.Text[z] + " ") == 0)
+                                if (item_type.IndexOf(PS.Blighted.Text[lang] + " ") == 0)
                                 {
                                     is_blight = true;
-                                    item_type = item_type.Substring(PS.Blighted.Text[z].Length + 1);
+                                    item_type = item_type.Substring(PS.Blighted.Text[lang].Length + 1);
                                 }
 
-                                if (item_type.IndexOf(PS.Shaped.Text[z] + " ") == 0)
-                                    item_type = item_type.Substring(PS.Shaped.Text[z].Length + 1);
+                                if (item_type.IndexOf(PS.Shaped.Text[lang] + " ") == 0)
+                                    item_type = item_type.Substring(PS.Shaped.Text[lang].Length + 1);
                             }
                             // 환영 지도면 구분을 위해서 1번 옵션 자동 체크
-                            if (!lItemOption[PS.DeliriumReward.Text[z]].IsEmpty() && itemfilters.Count > 0)
+                            if (!lItemOption[PS.DeliriumReward.Text[lang]].IsEmpty() && itemfilters.Count > 0)
                             {
                                 (FindName("tbOpt0_2") as CheckBox).IsChecked = true;
                                 (FindName("tbOpt0_0") as TextBox).Text = "";
@@ -720,9 +584,9 @@ namespace PoeTradeSearch
                                 itemfilters[0].min = 99999;
                             }
                         }
-                        else if (lItemOption[PS.SynthesisedItem.Text[z]] == "_TRUE_")
+                        else if (lItemOption[PS.SynthesisedItem.Text[lang]] == "_TRUE_")
                         {
-                            string[] tmp = PS.SynthesisedItem.Text[z].Split(' ');
+                            string[] tmp = PS.SynthesisedItem.Text[lang].Split(' ');
                             if (item_type.IndexOf(tmp[0] + " ") == 0)
                                 item_type = item_type.Substring(tmp[0].Length + 1);
                         }
@@ -748,10 +612,10 @@ namespace PoeTradeSearch
                             }
                         }
 
-                        item_idx = Array.FindIndex(mItems[z].Result[cate_idx].Entries, x => (x.Type == item_type && (rarity.Id != "unique" || x.Name == item_name)));
+                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Type == item_type && (rarity.Id != "unique" || x.Name == item_name)));
                     }
 
-                    string item_quality = Regex.Replace(lItemOption[PS.Quality.Text[z]], "[^0-9]", "");
+                    string item_quality = Regex.Replace(lItemOption[PS.Quality.Text[lang]], "[^0-9]", "");
                     bool is_gear = cate_ids.Length > 1 && cate_ids[0].WithIn("weapon", "armour", "accessory");
 
                     if (is_detail || is_map_fragment)
@@ -762,7 +626,7 @@ namespace PoeTradeSearch
                             tkDetail.Text = asData.Length > (i + 1) ? asData[i] + asData[i + 1] : asData[asData.Length - 1];
 
                             tkDetail.Text = Regex.Replace(
-                                tkDetail.Text.Replace(PS.UnstackItems.Text[z], ""),
+                                tkDetail.Text.Replace(PS.UnstackItems.Text[lang], ""),
                                 "<(uniqueitem|prophecy|divination|gemitem|magicitem|rareitem|whiteitem|corrupted|default|normal|augmented|size:[0-9]+)>",
                                 ""
                             );
@@ -779,8 +643,8 @@ namespace PoeTradeSearch
                         else if (!is_unIdentify && cate_ids[0] == "weapon")
                         {
                             setDPS(
-                                    lItemOption[PS.PhysicalDamage.Text[z]], lItemOption[PS.ElementalDamage.Text[z]], lItemOption[PS.ChaosDamage.Text[z]],
-                                    item_quality, lItemOption[PS.AttacksPerSecond.Text[z]], PhysicalDamageIncr, attackSpeedIncr
+                                    lItemOption[PS.PhysicalDamage.Text[lang]], lItemOption[PS.ElementalDamage.Text[lang]], lItemOption[PS.ChaosDamage.Text[lang]],
+                                    item_quality, lItemOption[PS.AttacksPerSecond.Text[lang]], PhysicalDamageIncr, attackSpeedIncr
                                 );
                         }
                     }
@@ -793,7 +657,7 @@ namespace PoeTradeSearch
                         string type = btmp ? item_type : mItems[i].Result[cate_idx].Entries[item_idx].Type;
                         cbName.Items.Add(new ItemNames(name, type));
                     }
-                    cbName.SelectedIndex = mConfig.Options.ServerType < 1 ? z : mConfig.Options.ServerType;
+                    cbName.SelectedIndex = mConfig.Options.ServerType < 1 ? lang : mConfig.Options.ServerType;
                     cbName.Tag = cate_ids; //카테고리
 
                     string[] bys = mConfig.Options.AutoSelectByType.ToLower().Split(',');
@@ -815,15 +679,15 @@ namespace PoeTradeSearch
                         cbRarity.SelectedIndex = 0;
                     }
 
-                    bdExchange.IsEnabled = cate_ids[0] == "currency" && GetExchangeItem(z, item_type) != null;
+                    bdExchange.IsEnabled = cate_ids[0] == "currency" && GetExchangeItem(lang, item_type) != null;
                     bdExchange.Visibility = !is_gem && (is_detail || bdExchange.IsEnabled) ? Visibility.Visible : Visibility.Hidden;
 
                     if (bdExchange.Visibility == Visibility.Hidden)
                     {
-                        tbLvMin.Text = Regex.Replace(lItemOption[is_gem ? PS.Level.Text[z] : PS.ItemLevel.Text[z]], "[^0-9]", "");
+                        tbLvMin.Text = Regex.Replace(lItemOption[is_gem ? PS.Level.Text[lang] : PS.ItemLevel.Text[lang]], "[^0-9]", "");
                         tbQualityMin.Text = item_quality;
 
-                        string[] Influences = { PS.ShaperItem.Text[z], PS.ElderItem.Text[z], PS.CrusaderItem.Text[z], PS.RedeemerItem.Text[z], PS.HunterItem.Text[z], PS.WarlordItem.Text[z] };
+                        string[] Influences = { PS.ShaperItem.Text[lang], PS.ElderItem.Text[lang], PS.CrusaderItem.Text[lang], PS.RedeemerItem.Text[lang], PS.HunterItem.Text[lang], PS.WarlordItem.Text[lang] };
                         for (int i = 0; i < Influences.Length; i++)
                         {
                             if (lItemOption[Influences[i]] == "_TRUE_")
@@ -836,7 +700,7 @@ namespace PoeTradeSearch
                                 cbInfluence2.SelectedIndex = i + 1;
                         }
 
-                        if (lItemOption[PS.Corrupted.Text[z]] == "_TRUE_")
+                        if (lItemOption[PS.Corrupted.Text[lang]] == "_TRUE_")
                         {
                             cbCorrupt.BorderThickness = new Thickness(2);
                             cbCorrupt.FontWeight = FontWeights.Bold;
@@ -856,28 +720,28 @@ namespace PoeTradeSearch
                                     is_map_ultimatum ? PS.RewardUltimatum : (is_Jewel ? RS.lRadius : PS.MapTier)
                                 ))).Entries)
                             {
-                                cbAltQuality.Items.Add(item.Text[z]);
+                                cbAltQuality.Items.Add(item.Text[lang]);
                             }
 
                             if (is_gem)
                             {
-                                ckLv.IsChecked = lItemOption[PS.Level.Text[z]].IndexOf(" (" + PS.Max.Text[z]) > 0;
+                                ckLv.IsChecked = lItemOption[PS.Level.Text[lang]].IndexOf(" (" + PS.Max.Text[lang]) > 0;
                                 ckQuality.IsChecked = item_quality.ToInt(0) > 19;
                                 cbAltQuality.SelectedIndex = alt_quality;
                             }
                             else if (is_Jewel)
                             {
-                                cbAltQuality.SelectedItem = lItemOption[PS.Radius.Text[z]];
+                                cbAltQuality.SelectedItem = lItemOption[PS.Radius.Text[lang]];
                                 if (cbAltQuality.SelectedIndex == -1)
                                 {
                                     cbAltQuality.Items.Clear();
-                                    cbAltQuality.Items.Add(lItemOption[PS.Radius.Text[z]] ?? "");
+                                    cbAltQuality.Items.Add(lItemOption[PS.Radius.Text[lang]] ?? "");
                                     cbAltQuality.SelectedIndex = 0;
                                 }
                             }
                             else if (is_heist)
                             {
-                                string tmp = Regex.Replace(lItemOption[PS.Heist.Text[z]], @".+ \(([^\)]+)\)$", "$1");
+                                string tmp = Regex.Replace(lItemOption[PS.Heist.Text[lang]], @".+ \(([^\)]+)\)$", "$1");
                                 cbAltQuality.SelectedValue = tmp;
                                 if (cbAltQuality.SelectedIndex == -1)
                                 {
@@ -891,10 +755,10 @@ namespace PoeTradeSearch
 
                                 if (is_map_ultimatum)
                                 {
-                                    cbAltQuality.SelectedValue = lItemOption[PS.RewardUltimatum.Text[z]];
+                                    cbAltQuality.SelectedValue = lItemOption[PS.RewardUltimatum.Text[lang]];
                                     if (cbAltQuality.SelectedIndex == -1)
                                     {
-                                        cbAltQuality.Items[cbAltQuality.Items.Count - 1] = lItemOption[PS.RewardUltimatum.Text[z]];
+                                        cbAltQuality.Items[cbAltQuality.Items.Count - 1] = lItemOption[PS.RewardUltimatum.Text[lang]];
                                         cbAltQuality.SelectedIndex = cbAltQuality.Items.Count - 1;
                                     }
                                 }
@@ -902,7 +766,7 @@ namespace PoeTradeSearch
                                 {
                                     ckLv.IsChecked = true;
                                     ckLv.Content = "등급";
-                                    tbLvMin.Text = tbLvMax.Text = lItemOption[PS.MapTier.Text[z]];
+                                    tbLvMin.Text = tbLvMax.Text = lItemOption[PS.MapTier.Text[lang]];
                                     cbAltQuality.SelectedValue = map_influenced != "" ? map_influenced : "영향 없음";
                                 }
                             }
@@ -923,13 +787,17 @@ namespace PoeTradeSearch
                         }
                     }
 
-                    if (lItemOption[PS.Sockets.Text[z]] != "")
+                    if (lItemOption[PS.Sockets.Text[lang]] != "")
                     {
-                        int[] socket = SocketParser(lItemOption[PS.Sockets.Text[z]]);
+                        int[] socket = SocketParser(lItemOption[PS.Sockets.Text[lang]]);
                         tbSocketMin.Text = socket[0].ToString();
                         tbLinksMin.Text = socket[1] > 0 ? socket[1].ToString() : "";
                         ckSocket.IsChecked = socket[1] > 4;
                     }
+
+                    ////////////////////////////////////////////
+                    /// BREAK POINT
+                    ////////////////////////////////////////////
 
                     if (is_gear && ckLv.IsChecked == false && cbName.Items.Count == 2)
                     {
@@ -952,7 +820,7 @@ namespace PoeTradeSearch
 
                     if (isWinShow || this.Visibility == Visibility.Visible)
                     {
-                        Synthesis.IsChecked = (is_map && is_blight) || lItemOption[PS.SynthesisedItem.Text[z]] == "_TRUE_";
+                        Synthesis.IsChecked = (is_map && is_blight) || lItemOption[PS.SynthesisedItem.Text[lang]] == "_TRUE_";
                         lbSocketBackground.Visibility = is_gear ? Visibility.Hidden : Visibility.Visible;
                         cbAltQuality.Visibility = is_gear ? Visibility.Hidden : Visibility.Visible;
                         bdDetail.Visibility = is_detail ? Visibility.Visible : Visibility.Hidden;
@@ -1186,6 +1054,11 @@ namespace PoeTradeSearch
                 JQ.Filters.Misc.Filters.Gem_level.Max = itemOptions.ChkLv == true && Inherit == "gem" ? itemOptions.LvMax : 99999;
                 JQ.Filters.Misc.Filters.AlternateQuality.Option = Inherit == "gem" && itemOptions.AltQuality > 0 ? itemOptions.AltQuality.ToString() : "any";
 
+
+                /////////////////////////////
+                /// BREAK POINT
+                /////////////////////////////
+
                 JQ.Filters.Misc.Filters.Shaper.Option = Inherit != "map" && (itemOptions.Influence1 == 1 || itemOptions.Influence2 == 1) ? "true" : "any";
                 JQ.Filters.Misc.Filters.Elder.Option = Inherit != "map" && (itemOptions.Influence1 == 2 || itemOptions.Influence2 == 2) ? "true" : "any";
                 JQ.Filters.Misc.Filters.Crusader.Option = Inherit != "map" && (itemOptions.Influence1 == 3 || itemOptions.Influence2 == 3) ? "true" : "any";
@@ -1252,7 +1125,7 @@ namespace PoeTradeSearch
 
                             if (filterDict != null)
                             {
-                                // 무기에 경우 pseudo_adds_[a-z]+_damage 옵션은 공격 시 가 붙음
+                                // 무기에 경우 pseudo_adds_[a-lang]+_damage 옵션은 공격 시 가 붙음
                                 if (Inherit == "weapon" && type == "pseudo" && Regex.IsMatch(stat, @"^pseudo_adds_[a-z]+_damage$"))
                                 {
                                     stat += "_to_attacks";
@@ -1295,6 +1168,9 @@ namespace PoeTradeSearch
                 {
                     sEntity = sEntity.Replace("\"name\":\"" + JQ.Name + "\",", "");
 
+                    /////////////////
+                    /// BREAK POINT 1
+                    /////////////////
                     if (Inherit == "jewel" || itemOptions.ByCategory)
                         sEntity = sEntity.Replace("\"type\":\"" + JQ.Type + "\",", "");
                     else if (Inherit == "prophecy" || JQ.Filters.Type.Filters.Category.Option == "monster.sample")
