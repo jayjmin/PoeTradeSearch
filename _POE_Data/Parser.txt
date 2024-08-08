@@ -388,7 +388,9 @@
 	"reverse_increase_decrease":{
 		"entries":[
 			{"text":["증가","increased"]},
-			{"text":["감소","reduced"]}
+			{"text":["감소","reduced"]},
+			{"text":["증폭","more"]},
+			{"text":["감폭","less"]}
 		]
 	}
 }
