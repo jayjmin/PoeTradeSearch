@@ -153,9 +153,10 @@ namespace PoeTradeSearch
                 SetFilterObjectColor(optionIdx, Brushes.Pink);
             }
         }
-        private (string, ParserDictItem, string, string) optionToFilter(string parsedOption, ParserData PS, byte lang, Dictionary<string, string> itemBaseInfo, string[] cate_ids, ParserDictItem special_option, string[] asSplit)
+
+
+        private string findMapInfluenced(string parsedOption, ParserData PS, byte lang, string[] cate_ids)
         {
-            string map_influenced = "";
             string input = parsedOption.RepEx(@"\s(\([a-zA-Z]+\)|—\s.+)$", "");
             string ft_type = parsedOption.Split(new string[] { "\n" }, 0)[0].RepEx(@"(.+)\s\(([a-zA-Z]+)\)$", "$2");
             if (!RS.lFilterType.ContainsKey(ft_type)) ft_type = "_none_"; // 영향력 검사???
@@ -170,12 +171,19 @@ namespace PoeTradeSearch
                 Match match = Regex.Match(input.Trim(), "(.+) (" + pats + "_none_)(.*)");
                 if (match.Success)
                 {
-                    map_influenced = match.Groups[2] + "";
-                    input = match.Groups[1] + " #" + match.Groups[3];
+                    return match.Groups[2] + "";
                 }
-                return (input, special_option, map_influenced, ft_type);
             }
-            else if (special_option == null)
+            return null;
+        }
+        private (string, ParserDictItem, string) optionToFilter(string parsedOption, ParserData PS, byte lang, Dictionary<string, string> itemBaseInfo, string[] cate_ids, ParserDictItem special_option, string[] asSplit)
+        {
+            string input = parsedOption.RepEx(@"\s(\([a-zA-Z]+\)|—\s.+)$", "");
+            string ft_type = parsedOption.Split(new string[] { "\n" }, 0)[0].RepEx(@"(.+)\s\(([a-zA-Z]+)\)$", "$2");
+            if (!RS.lFilterType.ContainsKey(ft_type)) ft_type = "_none_"; // 영향력 검사???
+
+
+            if (special_option == null)
             {
                 if (ft_type == "implicit" && cate_ids.Length == 1 && cate_ids[0] == "logbook")
                 {
@@ -207,7 +215,7 @@ namespace PoeTradeSearch
                 }
             }
 
-            return (input, special_option, map_influenced, ft_type);
+            return (input, special_option, ft_type);
         }
 
         private void ItemTextParser(string itemText, bool isWinShow = true)
@@ -343,7 +351,14 @@ namespace PoeTradeSearch
                                     string input = "";
                                     string ft_type = "";
 
-                                    (input, special_option, map_influenced, ft_type) = optionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
+                                    string mapInfluenced = findMapInfluenced(parsedOption, PS, lang, cate_ids);
+                                    if (mapInfluenced != null)
+                                    {
+                                        map_influenced = mapInfluenced;
+                                        continue;
+                                    }
+
+                                    (input, special_option, ft_type) = optionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
 
                                     input = Regex.Escape(Regex.Replace(input, @"[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+", "#"));
                                     input = Regex.Replace(input, @"\\#", @"[+-]?([0-9]+\.[0-9]+|[0-9]+|\#)");
