@@ -19,12 +19,12 @@ using static System.Net.WebRequestMethods;
 namespace PoeTradeSearch
 {
     public partial class WinMain : Window
-    // public class ItemOptionParser
     {
-        private void updateWindow(FilterDictItem filter, double min, double max, string[] cate_ids, bool local_exists, 
-            int lang, int optionIdx, string dataLabel, 
-            List<Itemfilter> itemfilters, ParserDictItem special_option, int is_deep, bool hasResistance, string ft_type, ParserData PS)
+        private void addOptionItem(FilterDictItem filter, double min, double max, string[] cate_ids, bool local_exists, 
+            int lang, int optionIdx, string dataLabel, List<Itemfilter> itemfilters, ParserDictItem special_option, int is_deep, bool hasResistance, string ft_type, ParserData PS)
         {
+            // This fuction adds one search option line in the main box to select min/max value to search.
+
             string[] split_id = filter.Id.Split('.');
 
             (FindName("cbOpt" + optionIdx) as ComboBox).Items.Add(new FilterEntrie(cate_ids[0], split_id[0], split_id[1], dataLabel));
@@ -49,16 +49,20 @@ namespace PoeTradeSearch
             }
             else
             {
-                string tmp_type = !local_exists && mConfig.Options.AutoSelectPseudo ? "pseudo" : ft_type;
-                (FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue = RS.lFilterType.ContainsKey(tmp_type) ? RS.lFilterType[tmp_type] : "_none_";
+                // Initial choice - pseudo or explicit?
+                List<string> orderedType = new List<string>();
 
-                if ((FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue == null)
+                if (ft_type == "fractured")
+                    orderedType.Add(ft_type);
+                if (!local_exists && mConfig.Options.AutoSelectPseudo)
+                    orderedType.Add("pseudo");
+                orderedType.Add(ft_type);
+                orderedType.Add("explicit");
+                orderedType.Add("fractured");
+                foreach (string type in orderedType)
                 {
-                    foreach (string type in new string[] { ft_type, "explicit", "fractured" })
-                    {
-                        (FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue = RS.lFilterType.ContainsKey(type) ? RS.lFilterType[type] : "_none_";
-                        if ((FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue != null) break;
-                    }
+                    (FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue = RS.lFilterType.ContainsKey(type) ? RS.lFilterType[type] : "_none_";
+                    if ((FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue != null) break;
                 }
             }
 
@@ -129,7 +133,7 @@ namespace PoeTradeSearch
                 }
             }
 
-                                        (FindName("tbOpt" + optionIdx + "_0") as TextBox).Text = min == 99999 ? "" : min.ToString();
+            (FindName("tbOpt" + optionIdx + "_0") as TextBox).Text = min == 99999 ? "" : min.ToString();
             (FindName("tbOpt" + optionIdx + "_1") as TextBox).Text = max == 99999 ? "" : max.ToString();
 
             string[] strs_tmp = (FindName("tbOpt" + optionIdx) as TextBox).Text.Split('\n');
@@ -500,7 +504,7 @@ namespace PoeTradeSearch
 
                                     if (filter != null)
                                     {
-                                        updateWindow(filter, min, max, cate_ids, local_exists, lang, optionIdx, dataLabel, itemfilters, special_option, is_deep, hasResistance, ft_type, PS);
+                                        addOptionItem(filter, min, max, cate_ids, local_exists, lang, optionIdx, dataLabel, itemfilters, special_option, is_deep, hasResistance, ft_type, PS);
 
                                         attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[lang] && min.WithIn(1, 999) ? min : 0;
                                         PhysicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
