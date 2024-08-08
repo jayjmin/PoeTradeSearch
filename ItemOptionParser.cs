@@ -274,6 +274,8 @@ namespace PoeTradeSearch
 
             //TODO 위키 보기시 이름만 빼자
             string map_influenced = "";
+
+            // PS stores data loaded from Parser.txt file.
             ParserData PS = mParser;
 
             try
@@ -418,6 +420,11 @@ namespace PoeTradeSearch
                                             MatchCollection matches1 = Regex.Matches(parsedOption, @"[-]?([0-9]+\.[0-9]+|[0-9]+)");
                                             foreach (FilterDictItem entrie in entries)
                                             {
+                                                string[] split_id = entrie.Id.Split('.');
+                                                int excludeId = Array.FindIndex(PS.ExcludeStat.Entries, x => x.Id == split_id[1] && x.Key == cate_ids[0]);
+                                                if (excludeId != -1)
+                                                    continue; // do not use the stat ID from exclude_test defined in Parser.txt
+
                                                 int idxMin = 0, idxMax = 0;
                                                 bool isMin = false, isMax = false;
                                                 bool isMatch = true;
@@ -465,7 +472,6 @@ namespace PoeTradeSearch
                                                 if (isMatch)
                                                 {
                                                     dataLabel = data_result.Label;
-                                                    string[] split_id = entrie.Id.Split('.');
 
                                                     (FindName("cbOpt" + optionIdx) as ComboBox).Items.Add(new FilterEntrie(cate_ids[0], split_id[0], split_id[1], dataLabel));
 

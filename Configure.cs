@@ -24,13 +24,6 @@ namespace PoeTradeSearch
             { "pseudo", "유사"}, { "explicit", "일반"}, { "implicit", "고정"}, { "fractured", "분열"}, { "enchant", "인챈"}, { "crafted", "제작"}, { "veiled", "장막"},
             { "monster", "야수"}, { "delve", "탐광"}, { "ultimatum", "결전" }, { "scourge", "재앙" }, { "sanctum", "성역" }
         };
-        /*
-        internal static Dictionary<string, bool> lDisable = new Dictionary<string, bool>()
-        {
-            { "stat_1001829678", true}, { "stat_1778298516", true}, { "stat_2881111359", true},  { "stat_561307714", true}, { "stat_57434274", true},
-            { "stat_3666934677", true}, { "stat_723388324", true}, { "stat_1086623733", true}
-        };
-        */
         internal static Dictionary<string, bool> lResistance = new Dictionary<string, bool>()
         {
             { "stat_4220027924", true }, { "stat_3372524247", true }, { "stat_1671376347", true }, { "stat_2915988346", true }, { "stat_4277795662", true }, { "stat_3441501978", true }
