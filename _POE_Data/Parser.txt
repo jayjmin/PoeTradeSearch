@@ -222,8 +222,12 @@
 			{"id":"47","text":[ "냉기 저항 +#%", "+#% to Cold Resistance" ]},
 			{"id":"48","text":[ "번개 저항 +#%", "+#% to Lightning Resistance" ]},
 			{"id":"49","text":[ "카오스 저항 +#%", "+#% to Chaos Resistance" ]},
-			{"id":"50","text":[ "#%의 확률로 공격 적중 완벽회피", "#% chance to Dodge Attack Hits" ]},
-			{"id":"51","text":[ "스킬의 마나 점유 효율 #% 증가", "#% increased Mana Reservation Efficiency of Skills" ]},
+			{"id":"50","text":[ "주문 피해 억제 확률 +#%", "+4% chance to Suppress Spell Damage" ]},
+			{"id":"51","text":[ "힘 +#", "+# to Strength" ]},
+			{"id":"52","text":[ "민첩 +#", "+# to Dexterity" ]},
+			{"id":"53","text":[ "지능 +#", "+# to Intelligence" ]},
+			{"id":"54","text":[ "스킬의 마나 점유 효율 #% 증가", "#% increased Mana Reservation Efficiency of Skills" ]},
+			{"id":"55","text":[ "플레이어가 시전하는 저주 효과 #% 증가", "#% increased Effect of your Curses" ]},
 		]
 	},
 
