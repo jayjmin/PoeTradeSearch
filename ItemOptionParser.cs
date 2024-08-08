@@ -310,7 +310,7 @@ namespace PoeTradeSearch
 
                     Dictionary<string, string> itemBaseInfo = new Dictionary<string, string>()
                     {
-                        { PS.Quality.Text[lang], "" }, { PS.Level.Text[lang], "" }, { PS.ItemLevel.Text[lang], "" }, { PS.TalismanTier.Text[lang], "" }, { PS.MapTier.Text[lang], "" },
+                        { PS.Quality.Text[lang], "" }, { PS.Level.Text[lang], "" }, { PS.ItemLevel.Text[lang], "" }, { PS.AreaLevel.Text[lang], "" }, { PS.TalismanTier.Text[lang], "" }, { PS.MapTier.Text[lang], "" },
                         { PS.Sockets.Text[lang], "" }, { PS.Heist.Text[lang], "" }, { PS.MapUltimatum.Text[lang], "" }, { PS.RewardUltimatum.Text[lang], "" },
                         { PS.Radius.Text[lang], "" },  { PS.DeliriumReward.Text[lang], "" }, { PS.MonsterGenus.Text[lang], "" }, { PS.MonsterGroup.Text[lang], "" },
                         { PS.PhysicalDamage.Text[lang], "" }, { PS.ElementalDamage.Text[lang], "" }, { PS.ChaosDamage.Text[lang], "" }, { PS.AttacksPerSecond.Text[lang], "" },
@@ -534,10 +534,14 @@ namespace PoeTradeSearch
                     bool is_divination_card = rarity.Id == "card";
                     bool is_gem = rarity.Id == "gem";
                     bool is_Jewel = cate_ids[0] == "jewel";
+                    bool is_sanctum = cate_ids[0] == "sanctum";
                     bool is_vaal_gem = is_gem && itemBaseInfo[PS.Vaal.Text[lang] + " " + item_type] == "_TRUE_";
                     bool is_heist = itemBaseInfo[PS.Heist.Text[lang]] != "";
                     bool is_unIdentify = itemBaseInfo[PS.Unidentified.Text[lang]] == "_TRUE_";
-                    bool is_detail = is_gem || is_map_fragment || (!is_map_ultimatum && is_currency) || is_divination_card || is_prophecy;
+                    bool is_detail = is_gem || is_map_fragment || is_currency || is_divination_card || is_prophecy;
+
+                    if (is_map_ultimatum || is_sanctum)
+                        is_detail = false;
 
                     int item_idx = -1;
 
@@ -727,7 +731,7 @@ namespace PoeTradeSearch
                     }
 
                     bdExchange.IsEnabled = cate_ids[0] == "currency" && GetExchangeItem(lang, item_type) != null;
-                    bdExchange.Visibility = !is_gem && (is_detail || bdExchange.IsEnabled) ? Visibility.Visible : Visibility.Hidden;
+                    bdExchange.Visibility = !(is_gem || is_sanctum) && (is_detail || bdExchange.IsEnabled) ? Visibility.Visible : Visibility.Hidden;
 
                     if (bdExchange.Visibility == Visibility.Hidden)
                     {
@@ -760,6 +764,11 @@ namespace PoeTradeSearch
                             ckQuality.IsChecked = item_quality.ToInt(0) > 19;
                             cbAltQuality.Items.Add(gem_disc);
                             cbAltQuality.SelectedValue = gem_disc;
+                        }
+                        else if (is_sanctum)
+                        {
+                            ckLv.IsChecked = true;
+                            tbLvMin.Text = tbLvMax.Text = itemBaseInfo[PS.AreaLevel.Text[lang]];
                         }
                         else if(is_Jewel || is_heist || is_map)
                         {
@@ -798,26 +807,23 @@ namespace PoeTradeSearch
                                 }
                                 ckLv.IsChecked = true;
                             }
-                            else if (is_map || is_map_ultimatum)
+                            else if (is_map_ultimatum)
                             {
                                 Synthesis.Content = "역병";
-
-                                if (is_map_ultimatum)
+                                cbAltQuality.SelectedValue = itemBaseInfo[PS.RewardUltimatum.Text[lang]];
+                                if (cbAltQuality.SelectedIndex == -1)
                                 {
-                                    cbAltQuality.SelectedValue = itemBaseInfo[PS.RewardUltimatum.Text[lang]];
-                                    if (cbAltQuality.SelectedIndex == -1)
-                                    {
-                                        cbAltQuality.Items[cbAltQuality.Items.Count - 1] = itemBaseInfo[PS.RewardUltimatum.Text[lang]];
-                                        cbAltQuality.SelectedIndex = cbAltQuality.Items.Count - 1;
-                                    }
+                                    cbAltQuality.Items[cbAltQuality.Items.Count - 1] = itemBaseInfo[PS.RewardUltimatum.Text[lang]];
+                                    cbAltQuality.SelectedIndex = cbAltQuality.Items.Count - 1;
                                 }
-                                else
-                                {
-                                    ckLv.IsChecked = true;
-                                    ckLv.Content = "등급";
-                                    tbLvMin.Text = tbLvMax.Text = itemBaseInfo[PS.MapTier.Text[lang]];
-                                    cbAltQuality.SelectedValue = map_influenced != "" ? map_influenced : "영향 없음";
-                                }
+                            }
+                            else if (is_map)
+                            {
+                                Synthesis.Content = "역병";
+                                ckLv.IsChecked = true;
+                                ckLv.Content = "등급";
+                                tbLvMin.Text = tbLvMax.Text = itemBaseInfo[PS.MapTier.Text[lang]];
+                                cbAltQuality.SelectedValue = map_influenced != "" ? map_influenced : "영향 없음";
                             }
                         }
                         else if (is_gear || cate_ids[0] == "flask")
