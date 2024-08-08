@@ -317,7 +317,7 @@ namespace PoeTradeSearch
 
                 string sEntity = Json.Serialize<JsonData>(jsonData);
 
-                if (itemOptions.ByCategory || JQ.Name == "" || JQ.Filters.Type.Filters.Rarity.Option != "unique")
+                if (itemOptions.ByCategory || JQ.Name == "" || !(JQ.Filters.Type.Filters.Rarity.Option == "unique"))
                 {
                     sEntity = sEntity.Replace("\"name\":\"" + JQ.Name + "\",", "");
 
@@ -328,6 +328,15 @@ namespace PoeTradeSearch
                         sEntity = sEntity.Replace("\"type\":\"" + JQ.Type + "\",", "");
                     else if (Inherit == "prophecy" || JQ.Filters.Type.Filters.Category.Option == "monster.sample")
                         sEntity = sEntity.Replace("\"type\":\"" + JQ.Type + "\",", "\"" + (Inherit == "prophecy" ? "name" : "term") + "\":\"" + JQ.Type + "\",");
+                }
+
+                if (Inherit == "gem" && itemOptions.Name != "")
+                {
+                    TransfiguredGemType gemType = new TransfiguredGemType();
+                    gemType.Option = itemOptions.Type;
+                    gemType.Discriminator = itemOptions.Flags; // alt_x or alt_y
+                    string transType = Json.Serialize<TransfiguredGemType>(gemType);
+                    sEntity = sEntity.Replace("\"type\":\"" + JQ.Type + "\",", "\"type\":" + transType + ",");
                 }
 
                 sEntity = sEntity.RepEx("\"(min|max)\":99999|\"option\":(0|\"any\"|null)", "").RepEx("\"[a-z_]+\":{[,]*}", "");

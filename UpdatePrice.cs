@@ -115,6 +115,12 @@ namespace PoeTradeSearch
                         url_string = RS.ExchangeApi[langIndex] + league;
                         json_entity = "{\"exchange\":{\"status\":{\"option\":\"online\"},\"have\":[\"" + entity[0] + "\"],\"want\":[\"" + entity[1] + "\"]}}";
                     }
+
+                    /////////////////
+                    /// BREAK POINT - Price Update Error
+                    // If both Korean and English does not work, check this line. Find out what is url_string and json_entity below.
+                    /////////////////
+                    
                     string request_result = SendHTTP(json_entity, url_string, mConfig.Options.ServerTimeout);
                     msg = "현재 리그의 거래소 접속이 원활하지 않습니다";
 

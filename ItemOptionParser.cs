@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
 using static PoeTradeSearch.Native;
@@ -522,7 +523,7 @@ namespace PoeTradeSearch
                     }
 
 
-                    int alt_quality = 0;
+                    string gem_disc = "";
                     bool is_blight = false;
 
                     bool is_map = cate_ids[0] == "map"; // || itemBaseInfo[PS.MapTier.Text[lang]] != "";
@@ -541,8 +542,14 @@ namespace PoeTradeSearch
                     int item_idx = -1;
 
                     ////////////////////////////////
+                    /// BREAK POINT
                     /// Find item from ItemsKO.txt and ItemsEN.txt
                     ////////////////////////////////
+                    // How to debug Korean - English mismatch issue:
+                    // 1. Find Id and Key from Parser.txt file. This is the value of "category" here.
+                    // 2. Find the same Id from ItemsEN.txt file.
+                    // 'Key' from Parser.txt must be equal to 'id' of ItemEN.txt file. If not, update 'Key' in the Parser.txt because ItemEN.txt is updated dynamically from trade site.
+
                     int cate_idx = category != null ? Array.FindIndex(mItems[lang].Result, x => x.Id.Equals(category.Key)) : -1;
 
                     if (is_prophecy)
@@ -565,6 +572,30 @@ namespace PoeTradeSearch
                         item_type = lang == 1 || item_idx == -1 ? item_type : mItems[1].Result[cate_idx].Entries[item_idx].Type;
                         item_idx = -1; // 야수는 영어로만 검색됨...
                     }
+                    else if (is_gem)
+                    {
+                        if (is_vaal_gem && itemBaseInfo[PS.Corrupted.Text[lang]] == "_TRUE_")
+                        {
+                            FilterDict data = mItems[lang].Result[cate_idx];
+                            FilterDictItem entries = Array.Find(data.Entries, x => x.Text.Equals(PS.Vaal.Text[lang] + " " + item_type));
+                            if (entries != null) item_type = entries.Type;
+                        }
+
+                        // Find transfigured gem first: "name" is transfigured gem full name, "type" is the base gem name.
+                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Text == item_type));
+
+                        if (item_idx == -1)
+                        {
+                            item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Type == item_type));
+                        }
+                        else
+                        {
+                            // Transfigured Gem
+                            item_name = item_type;
+                            item_type = mItems[lang].Result[cate_idx].Entries[item_idx].Type;
+                            gem_disc = mItems[lang].Result[cate_idx].Entries[item_idx].Disc;
+                        }
+                    }
                     else if (cate_idx > -1)
                     {
                         FilterDict data = mItems[lang].Result[cate_idx];
@@ -578,25 +609,7 @@ namespace PoeTradeSearch
                             item_type = item_type.Split(new string[] { lang == 1 ? " of " : " - " }, StringSplitOptions.None)[0].Trim();
                         }
 
-                        if (is_gem)
-                        {
-                            for (int i = 0; i < PS.Gems.Entries.Length; i++)
-                            {
-                                int pos = item_type.IndexOf(PS.Gems.Entries[i].Text[lang] + " ");
-                                if (pos == 0)
-                                {
-                                    alt_quality = i + 1;
-                                    item_type = item_type.Substring(PS.Gems.Entries[i].Text[lang].Length + 1);
-                                }
-                            }
-
-                            if (is_vaal_gem && itemBaseInfo[PS.Corrupted.Text[lang]] == "_TRUE_")
-                            {
-                                FilterDictItem entries = Array.Find(data.Entries, x => x.Text.Equals(PS.Vaal.Text[lang] + " " + item_type));
-                                if (entries != null) item_type = entries.Type;
-                            }
-                        }
-                        else if (is_map && item_type.Length > 5)
+                        if (is_map && item_type.Length > 5)
                         {
                             if (item_type.Length > 5)
                             {
@@ -741,29 +754,31 @@ namespace PoeTradeSearch
                             cbCorrupt.Foreground = System.Windows.Media.Brushes.DarkRed;
                         }
 
-                        if (is_gem || is_Jewel || is_heist || is_map)
+                        if (is_gem) 
+                        {
+                            ckLv.IsChecked = itemBaseInfo[PS.Level.Text[lang]].IndexOf(" (" + PS.Max.Text[lang]) > 0;
+                            ckQuality.IsChecked = item_quality.ToInt(0) > 19;
+                            cbAltQuality.Items.Add(gem_disc);
+                            cbAltQuality.SelectedValue = gem_disc;
+                        }
+                        else if(is_Jewel || is_heist || is_map)
                         {
                             cbAltQuality.Items.Add(
                                 is_heist ? "모든 강탈 가치" : (
-                                    is_gem ? "모든 젬" : (
-                                        is_map_ultimatum ? "모든 보상" : (is_Jewel ? "모든 반경" : "영향 없음")
-                                )));
+                                    is_map_ultimatum ? "모든 보상" : (
+                                        is_Jewel ? "모든 반경"
+                                            : "영향 없음")
+                                ));
 
                             foreach (ParserDictItem item in (
-                                is_heist ? PS.Heist : (is_gem ? PS.Gems : (
+                                is_heist ? PS.Heist : (
                                     is_map_ultimatum ? PS.RewardUltimatum : (is_Jewel ? RS.lRadius : PS.MapTier)
-                                ))).Entries)
+                                )).Entries)
                             {
                                 cbAltQuality.Items.Add(item.Text[lang]);
                             }
 
-                            if (is_gem)
-                            {
-                                ckLv.IsChecked = itemBaseInfo[PS.Level.Text[lang]].IndexOf(" (" + PS.Max.Text[lang]) > 0;
-                                ckQuality.IsChecked = item_quality.ToInt(0) > 19;
-                                cbAltQuality.SelectedIndex = alt_quality;
-                            }
-                            else if (is_Jewel)
+                            if (is_Jewel)
                             {
                                 cbAltQuality.SelectedItem = itemBaseInfo[PS.Radius.Text[lang]];
                                 if (cbAltQuality.SelectedIndex == -1)
@@ -935,6 +950,11 @@ namespace PoeTradeSearch
             itemOption.Flags = is_ultimatum ? "ULTIMATUM|" + cbAltQuality.SelectedValue : "";
 
             itemOption.itemfilters.Clear();
+
+            if (itemOption.Inherits[0] == "gem")
+            {
+                itemOption.Flags = cbAltQuality.SelectedValue.ToString();
+            }
 
             if (!is_ultimatum && itemOption.AltQuality > 0 && itemOption.Inherits[0].WithIn("jewel", "map"))
             {

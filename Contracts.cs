@@ -317,6 +317,9 @@ namespace PoeTradeSearch
 
         [DataMember(Name = "part")]
         internal string Part = "";
+
+        [DataMember(Name = "disc")]
+        internal string Disc = "";
     }
 
     [DataContract]
@@ -673,6 +676,16 @@ namespace PoeTradeSearch
 
         [DataMember(Name = "sort")]
         internal q_Sort Sort = new q_Sort();
+    }
+
+    [DataContract]
+    internal class TransfiguredGemType
+    {
+        [DataMember(Name = "option")]
+        internal string Option;
+
+        [DataMember(Name = "discriminator")]
+        internal string Discriminator;
     }
 
     public class FilterEntrie
