@@ -140,6 +140,7 @@
       <DependentUpon>HotkeyBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="Helper.cs" />
+    <Compile Include="UpdatePrice.cs" />
     <Compile Include="Methods.cs" />
     <Compile Include="Configure.cs" />
     <Compile Include="Updates.cs" />
