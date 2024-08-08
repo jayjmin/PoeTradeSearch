@@ -95,7 +95,7 @@ namespace PoeTradeSearch
                         rootClass.Update = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                         using (StreamWriter writer = new StreamWriter(path + (isKR ? "FiltersKO.txt" : "FiltersEN.txt"), false, Encoding.UTF8))
                         {
-                            writer.Write(Json.Serialize<FilterData>(rootClass, true));
+                            writer.Write(Json.Serialize<FilterData>(rootClass));
                             writer.Close();
                         }
 
@@ -130,7 +130,7 @@ namespace PoeTradeSearch
                         rootClass.Update = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                         using (StreamWriter writer = new StreamWriter(path + (isKR ? "ItemsKO.txt" : "ItemsEN.txt"), false, Encoding.UTF8))
                         {
-                            writer.Write(Json.Serialize<FilterData>(rootClass, true));
+                            writer.Write(Json.Serialize<FilterData>(rootClass));
                             writer.Close();
                         }
 
@@ -165,7 +165,7 @@ namespace PoeTradeSearch
                         rootClass.Update = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
                         using (StreamWriter writer = new StreamWriter(path + (isKR ? "StaticKO.txt" : "StaticEN.txt"), false, Encoding.UTF8))
                         {
-                            writer.Write(Json.Serialize<FilterData>(rootClass, true));
+                            writer.Write(Json.Serialize<FilterData>(rootClass));
                             writer.Close();
                         }
 
@@ -187,7 +187,7 @@ namespace PoeTradeSearch
             // 마우스 훜시 프로그램에 딜레이가 생겨 쓰레드 처리
             Thread thread = new Thread(() =>
             {
-                string u = "https://raw.githubusercontent.com/naruket/PoeTradeSearchFork/master/_POE_Data/" + filename;
+                string u = "https://raw.githubusercontent.com/jayjmin/PoeTradeSearch/master/_POE_Data/" + filename;
                 string v_string = SendHTTP(null, u, 3);
                 if ((v_string ?? "") != "")
                 {

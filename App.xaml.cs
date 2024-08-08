@@ -65,7 +65,7 @@ namespace PoeTradeSearch
                     try
                     {
                         client.DownloadFile(
-                            "https://raw.githubusercontent.com/naruket/PoeTradeSearchFork/master/_POE_Data/_POE_EXE.zip",
+                            "https://raw.githubusercontent.com/jayjmin/PoeTradeSearch/master/_POE_Data/_POE_EXE.zip",
                             path + "poe_exe.zip"
                         );
                     }
