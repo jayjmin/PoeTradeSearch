@@ -193,6 +193,7 @@ namespace PoeTradeSearch
                 JQ.Filters.Trade.Disabled = mConfig.Options.SearchBeforeDay == 0;
                 JQ.Filters.Trade.Filters.Indexed.Option = BeforeDayToString(mConfig.Options.SearchBeforeDay);
                 JQ.Filters.Trade.Filters.SaleType.Option = useSaleType ? "priced" : "any";
+                JQ.Filters.Trade.Filters.Price.Option = "chaos_divine";
                 JQ.Filters.Trade.Filters.Price.Max = 99999;
                 JQ.Filters.Trade.Filters.Price.Min = itemOptions.PriceMin > 0 ? itemOptions.PriceMin : 99999;
 
