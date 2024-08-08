@@ -1006,7 +1006,7 @@ namespace PoeTradeSearch
                         {
                             total_res_idx = itemOption.itemfilters.Count;
                             itemfilter.type = "pseudo";
-                            itemfilter.stat = "pseudo_total_resistance";
+                            itemfilter.stat = "pseudo_total_elemental_resistance";
                         }
                         else
                         {

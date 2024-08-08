@@ -33,7 +33,7 @@ namespace PoeTradeSearch
         */
         internal static Dictionary<string, bool> lResistance = new Dictionary<string, bool>()
         {
-            { "stat_4220027924", true }, { "stat_3372524247", true }, { "stat_1671376347", true }, { "stat_2923486259", true }, { "stat_2915988346", true }, { "stat_4277795662", true }, { "stat_3441501978", true }
+            { "stat_4220027924", true }, { "stat_3372524247", true }, { "stat_1671376347", true }, { "stat_2915988346", true }, { "stat_4277795662", true }, { "stat_3441501978", true }
         };
 
         internal static Dictionary<string, string> lPseudo = new Dictionary<string, string>()
