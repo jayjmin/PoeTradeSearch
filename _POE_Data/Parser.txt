@@ -274,9 +274,9 @@
 			{"id":"accessory.belt","key":"accessory","text":[ "허리띠", "Belts" ]},
 			{"id":"accessory.ring","key":"accessory","text":[ "반지", "Rings" ]},
 			{"id":"accessory.trinket","key":"accessory","text":[ "장신구", "Trinkets" ]},
-			{"id":"gem.activegem","key":"gems","text":[ "스킬 젬", "Active Skill Gems" ]},
-			{"id":"gem.supportgem","key":"gems","text":[ "보조 젬", "Support Skill Gems" ]},
-			{"id":"gem.supportgemplus","key":"gems","flag":"--","text":[ "각성한 보조 스킬 젬", "Awakened Support Skill Gems" ]},
+			{"id":"gem.activegem","key":"gem","text":[ "스킬 젬", "Active Skill Gems" ]},
+			{"id":"gem.supportgem","key":"gem","text":[ "보조 젬", "Support Skill Gems" ]},
+			{"id":"gem.supportgemplus","key":"gem","flag":"--","text":[ "각성한 보조 스킬 젬", "Awakened Support Skill Gems" ]},
 			{"id":"jewel.base","key":"jewels","text":[ "주얼", "Jewel" ]},
 			{"id":"jewel.abyss","key":"jewels","text":[ "심연 주얼", "Abyss Jewel" ]},
 			{"id":"jewel.cluster","key":"jewels","flag":"--","text":[ "군 주얼", "Cluster Jewel" ]},
@@ -306,13 +306,6 @@
 			{"id":"prophecy","key":"prophecies","flag":"--","text":[ "예언", "Prophecy" ]},
 			{"id":"monster.beast","key":"monsters","flag":"--","text":[ "야수", "Beast" ]},
 			{"id":"currency.fossil","key":"currency","flag":"--","text":[ "화석", "Fossil" ]}
-		]
-	},
-	"gems":{
-		"entries":[
-			{"text":[ "기묘한", "Anomalous" ]},
-			{"text":[ "상이한", "Divergent" ]},
-			{"text":[ "몽환적인", "Phantasmal" ]}
 		]
 	},
 	"map_tier":{
