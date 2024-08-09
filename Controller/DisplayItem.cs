@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.AccessControl;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -311,6 +312,38 @@ namespace PoeTradeSearch
             lbDPS.Content = ItemParserHelper.CalcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
         }
 
+        private bool FindSavedOptionChecked(string statId, string category)
+        {
+            bool isOptionStored = mChecked.Entries?.Find(x => x.Id.Equals(statId) && x.Key.IndexOf(category + "/") > -1) != null;
+            return isOptionStored;
+        }
+
+        private bool ImplicitSavedOptionChecked(string ft_type, string selectedType)
+        {
+            // Implicit options are not auto-checked even if the option is included in the saved stat. Allow only for pseudo options.
+            if (ft_type == "implicit" && selectedType == "pseudo")
+                return true;
+
+            if (ft_type == "implicit")
+                return false;
+
+            return true;
+        }
+
+        private bool FindSavedItemLevelChecked(string influence, string itemBase)
+        {
+            CheckedDictItem storedBase =  mChecked.bases?.Find(x => Regex.IsMatch(x.Id, "모두|" + influence) && Regex.IsMatch(x.Key, itemBase));
+
+            if (storedBase == null)
+                return false;
+
+            MatchCollection mmm = Regex.Matches(storedBase.Key, itemBase);
+            if (mmm.Count == 1 && mmm[0].Groups.Count == 2 && mmm[0].Groups[1].Value.ToInt(101) <= tbLvMin.Text.ToInt(0))
+                return true;
+
+            return false;
+        }
+
         private void Deduplicationfilter(List<Itemfilter> itemfilters)
         {
             for (int i = 0; i < itemfilters.Count; i++)
@@ -361,8 +394,11 @@ namespace PoeTradeSearch
 
 
             Dictionary<string, SolidColorBrush> color = new Dictionary<string, SolidColorBrush>()
-                                        {
-                                            { "implicit", Brushes.DarkRed }, { "crafted", Brushes.Blue }, { "enchant", Brushes.Blue }, { "scourge", Brushes.DarkOrange }
+            {
+                { "implicit", Brushes.DarkRed },
+                { "crafted", Brushes.Blue },
+                { "enchant", Brushes.Blue },
+                { "scourge", Brushes.DarkOrange }
             };
             SetFilterObjectColor(optionIdx, color.ContainsKey(ft_type) ? color[ft_type] : SystemColors.ActiveBorderBrush);
 
@@ -372,6 +408,8 @@ namespace PoeTradeSearch
                 if (split_id.Length == 2 && RS.lPseudo.ContainsKey(split_id[1]))
                     (FindName("cbOpt" + optionIdx) as ComboBox).Items.Add(new FilterEntrie(cate_ids[0], "pseudo", split_id[1], RS.lFilterType["pseudo"]));
             }
+
+            string selectedType = ft_type;
 
             if ((FindName("cbOpt" + optionIdx) as ComboBox).Items.Count == 1)
             {
@@ -389,11 +427,21 @@ namespace PoeTradeSearch
                 orderedType.Add(ft_type);
                 orderedType.Add("explicit");
                 orderedType.Add("fractured");
+
                 foreach (string type in orderedType)
                 {
                     (FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue = RS.lFilterType.ContainsKey(type) ? RS.lFilterType[type] : "_none_";
-                    if ((FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue != null) break;
+                    if ((FindName("cbOpt" + optionIdx) as ComboBox).SelectedValue != null)
+                    {
+                        selectedType = type;
+                        break;
+                    }
                 }
+            }
+
+            // If pseudo is overwritten for implicit, change the color to allow Saved Checked.
+            if (ft_type == "implicit" && selectedType == "pseudo") {
+                SetFilterObjectColor(optionIdx, Brushes.MediumVioletRed);
             }
 
             // 평균
@@ -457,8 +505,7 @@ namespace PoeTradeSearch
             }
             else
             {
-                if (ft_type != "implicit" && (is_deep < 1 || is_deep < 3) &&
-                    (mChecked.Entries?.Find(x => x.Id.Equals(split_id[1]) && x.Key.IndexOf(cate_ids[0] + "/") > -1) != null))
+                if (ImplicitSavedOptionChecked(ft_type, selectedType) && (is_deep < 1 || is_deep < 3) && FindSavedOptionChecked(split_id[1], cate_ids[0]))
                 {
                     (FindName("tbOpt" + optionIdx + "_2") as CheckBox).BorderThickness = new Thickness(2);
                     (FindName("tbOpt" + optionIdx + "_2") as CheckBox).IsChecked = true;
@@ -753,19 +800,15 @@ namespace PoeTradeSearch
             if (is_gear && ckLv.IsChecked == false && cbName.Items.Count == 2)
             {
                 ItemNames names = (ItemNames)cbName.Items[0];
-                string tmp = names.Type.Escape() + @"\(([0-9]+)\)\/";
-                string tmp2 = (cbInfluence1.Text ?? "__NULL__") + "|" + (cbInfluence2.Text ?? "__NULL__");
-                CheckedDictItem baseitem = mChecked.bases?.Find(x => Regex.IsMatch(x.Id, "모두|" + tmp2) && Regex.IsMatch(x.Key, tmp));
-                if (baseitem != null)
+                string baseType = names.Type.Escape() + @"\(([0-9]+)\)\/";
+                string influenceFlag = (cbInfluence1.Text ?? "__NULL__") + "|" + (cbInfluence2.Text ?? "__NULL__");
+                bool itemLevelChecked = FindSavedItemLevelChecked(influenceFlag, baseType);
+                if (itemLevelChecked)
                 {
-                    MatchCollection mmm = Regex.Matches(baseitem.Key, tmp);
-                    if (mmm.Count == 1 && mmm[0].Groups.Count == 2 && mmm[0].Groups[1].Value.ToInt(101) <= tbLvMin.Text.ToInt(0))
-                    {
-                        ckLv.FontWeight = FontWeights.Bold;
-                        ckLv.Foreground = System.Windows.Media.Brushes.DarkRed;
-                        ckLv.BorderBrush = System.Windows.Media.Brushes.DarkRed;
-                        ckLv.IsChecked = true;
-                    }
+                    ckLv.FontWeight = FontWeights.Bold;
+                    ckLv.Foreground = System.Windows.Media.Brushes.DarkRed;
+                    ckLv.BorderBrush = System.Windows.Media.Brushes.DarkRed;
+                    ckLv.IsChecked = true;
                 }
             }
 

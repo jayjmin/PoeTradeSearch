@@ -256,6 +256,7 @@ namespace PoeTradeSearch
 
             if (tmp.Length == (is_deep == 0 ? 3 : 2))
             {
+                // 하나의 옵션이 2줄 이상으로 이루어진 경우 (회복량 증가+회복속도 감소)
                 is_multi_line = true;
                 options.Add(tmp[0 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[1 + (is_deep == 0 ? 1 : 0)]);
             }

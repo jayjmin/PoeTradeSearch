@@ -459,6 +459,7 @@ namespace PoeTradeSearch
 
         private void tbOpt0_2_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // 체크박스에 우클릭하면 다음 로딩시 자동으로 체크되도록 저장함
             int index = ((string)(sender as CheckBox).Tag).ToInt();
 
             if ((FilterEntrie)(FindName("cbOpt" + index) as ComboBox).SelectedItem == null)
