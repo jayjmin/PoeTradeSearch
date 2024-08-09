@@ -209,7 +209,7 @@ namespace PoeTradeSearch
 
             Application.Current.DispatcherUnhandledException += AppDispatcherUnhandledException;
 
-            Uri uri = new Uri("pack://application:,,,/PoeTradeSearch;component/Icon1.ico");
+            Uri uri = new Uri("pack://application:,,,/PoeTradeSearch;component/Resource/Icon1.ico");
             using (Stream iconStream = Application.GetResourceStream(uri).Stream)
             {
                 System.Windows.Forms.ContextMenu TrayCM = new System.Windows.Forms.ContextMenu();

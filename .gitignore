@@ -1,6 +1,8 @@
 .vs
 bin/
 obj/
+.vscode/
+packages/
 
 # OS generated files #
 ######################

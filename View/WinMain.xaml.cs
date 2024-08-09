@@ -229,7 +229,7 @@ namespace PoeTradeSearch
             }
             else
             {
-                sEntity = CreateJson(GetItemOptions(), false);
+                sEntity = GetJson(GetItemOptions(), false);
 
                 if (sEntity == null || sEntity == "")
                 {

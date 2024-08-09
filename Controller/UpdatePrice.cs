@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 
 namespace PoeTradeSearch
@@ -36,7 +38,7 @@ namespace PoeTradeSearch
                 priceThread = new Thread(() =>
                 {
                     UpdatePrice(league, langIndex,
-                            exchange ?? (new string[1] { CreateJson(itemOptions, true) }), listCount
+                            exchange ?? (new string[1] { GetJson(itemOptions, true) }), listCount
                         );
 
                     if (mConfig.Options.SearchAutoDelay > 0)
@@ -52,7 +54,46 @@ namespace PoeTradeSearch
             }
         }
 
-        private int mAutoSearchTimerCount;
+        private string GetJson(ItemOption itemOptions, bool useSaleType)
+        {
+            try
+            {
+                string sEntity;
+                bool error_filter;
+                (sEntity, error_filter) = Request.CreateJson(itemOptions, useSaleType, mFilter, mParser, mConfig);
+
+                if (error_filter)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background,
+                        (ThreadStart)delegate ()
+                        {
+                            for (int i = 0; i < itemOptions.itemfilters.Count; i++)
+                            {
+                                if (itemOptions.itemfilters[i].isNull)
+                                {
+                                    ((TextBox)FindName("tbOpt" + i)).Background = System.Windows.Media.Brushes.Red;
+                                    ((TextBox)FindName("tbOpt" + i + "_0")).Text = "error";
+                                    ((TextBox)FindName("tbOpt" + i + "_1")).Text = "error";
+                                    ((CheckBox)FindName("tbOpt" + i + "_2")).IsChecked = false;
+                                    ((CheckBox)FindName("tbOpt" + i + "_2")).IsEnabled = false;
+                                    ((CheckBox)FindName("tbOpt" + i + "_3")).Visibility = Visibility.Hidden;
+                                }
+                            }
+                        }
+                    );
+                }
+
+                return sEntity;
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine(ex.Message);
+                ForegroundMessage(String.Format("{0} 에러:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace), "에러", MessageBoxButton.OK, MessageBoxImage.Error);
+                return "";
+            }
+        }
+
+    private int mAutoSearchTimerCount;
         private void AutoSearchTimer_Tick(object sender, EventArgs e)
         {
             tkPriceInfo.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()

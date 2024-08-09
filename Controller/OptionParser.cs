@@ -11,6 +11,143 @@ namespace PoeTradeSearch
 {
     public partial class WinMain : Window
     {
+        private void ResetControls()
+        {
+            tbLinksMin.Text = "";
+            tbSocketMin.Text = "";
+            tbLinksMax.Text = "";
+            tbSocketMax.Text = "";
+            tbLvMin.Text = "";
+            tbLvMax.Text = "";
+            tbQualityMin.Text = "";
+            tbQualityMax.Text = "";
+            tkDetail.Text = "";
+
+            lbDPS.Content = "옵션";
+            Synthesis.Content = "결합";
+
+            cbRarity.Items.Clear();
+            cbRarity.Items.Add("모두");
+            cbRarity.Items.Add(mParser.Rarity.Entries[0].Text[0]);
+            cbRarity.Items.Add(mParser.Rarity.Entries[1].Text[0]);
+            cbRarity.Items.Add(mParser.Rarity.Entries[2].Text[0]);
+            cbRarity.Items.Add(mParser.Rarity.Entries[3].Text[0]);
+
+            cbAiiCheck.IsChecked = false;
+            ckLv.IsChecked = false;
+            ckQuality.IsChecked = false;
+            ckSocket.IsChecked = false;
+            Synthesis.IsChecked = false;
+
+            cbAltQuality.Items.Clear();
+            cbInfluence1.SelectedIndex = 0;
+            cbInfluence2.SelectedIndex = 0;
+            cbInfluence1.BorderThickness = new Thickness(1);
+            cbInfluence2.BorderThickness = new Thickness(1);
+
+            cbCorrupt.SelectedIndex = 0;
+            cbCorrupt.BorderThickness = new Thickness(1);
+            cbCorrupt.FontWeight = FontWeights.Normal;
+            cbCorrupt.Foreground = cbInfluence1.Foreground;
+
+            cbOrbs.SelectionChanged -= CbOrbs_SelectionChanged;
+            cbSplinters.SelectionChanged -= CbOrbs_SelectionChanged;
+            cbOrbs.SelectedIndex = 0;
+            cbSplinters.SelectedIndex = 0;
+            cbOrbs.SelectionChanged += CbOrbs_SelectionChanged;
+            cbSplinters.SelectionChanged += CbOrbs_SelectionChanged;
+
+            cbOrbs.FontWeight = FontWeights.Normal;
+            cbSplinters.FontWeight = FontWeights.Normal;
+
+            ckLv.Content = mParser.Level.Text[0];
+            ckLv.FontWeight = FontWeights.Normal;
+            ckLv.Foreground = Synthesis.Foreground;
+            ckLv.BorderBrush = Synthesis.BorderBrush;
+            ckQuality.FontWeight = FontWeights.Normal;
+            ckQuality.Foreground = Synthesis.Foreground;
+            ckQuality.BorderBrush = Synthesis.BorderBrush;
+            lbSocketBackground.Visibility = Visibility.Hidden;
+
+            tabControl1.SelectedIndex = 0;
+            cbPriceListCount.SelectedIndex = (mConfig.Options.SearchListCount / 20) - 1;
+            tbPriceFilterMin.Text = mConfig.Options.SearchPriceMinimum > 0 ? mConfig.Options.SearchPriceMinimum.ToString() : "";
+
+            tkPriceCount.Text = "";
+            tkPriceInfo.Text = (string)tkPriceInfo.Tag;
+            cbPriceListTotal.Text = "0/0 검색";
+
+            for (int i = 0; i < 10; i++)
+            {
+                ((ComboBox)FindName("cbOpt" + i)).Items.Clear();
+                // ((ComboBox)FindName("cbOpt" + i)).ItemsSource = new List<FilterEntrie>();
+                ((ComboBox)FindName("cbOpt" + i)).DisplayMemberPath = "Name";
+                ((ComboBox)FindName("cbOpt" + i)).SelectedValuePath = "Name";
+
+                ((TextBox)FindName("tbOpt" + i)).Text = "";
+                ((TextBox)FindName("tbOpt" + i)).Tag = null; // 특수 옵션에 사용
+                ((TextBox)FindName("tbOpt" + i)).Background = SystemColors.WindowBrush;
+                ((TextBox)FindName("tbOpt" + i + "_0")).Text = "";
+                ((TextBox)FindName("tbOpt" + i + "_1")).Text = "";
+                ((TextBox)FindName("tbOpt" + i + "_0")).IsEnabled = true;
+                ((TextBox)FindName("tbOpt" + i + "_1")).IsEnabled = true;
+                ((TextBox)FindName("tbOpt" + i + "_0")).Background = SystemColors.WindowBrush;
+                ((TextBox)FindName("tbOpt" + i + "_0")).Foreground = ((TextBox)FindName("tbOpt" + i)).Foreground;
+                ((CheckBox)FindName("tbOpt" + i + "_2")).BorderThickness = new Thickness(1);
+                ((CheckBox)FindName("tbOpt" + i + "_2")).IsEnabled = true;
+                ((CheckBox)FindName("tbOpt" + i + "_2")).IsChecked = false;
+                ((CheckBox)FindName("tbOpt" + i + "_3")).IsChecked = false;
+
+                SetFilterObjectColor(i, SystemColors.ActiveBorderBrush);
+                SetFilterObjectVisibility(i, Visibility.Visible);
+
+                ((CheckBox)FindName("tbOpt" + i + "_3")).Visibility = Visibility.Hidden;
+            }
+        }
+        private void SetFilterObjectColor(int index, System.Windows.Media.SolidColorBrush colorBrush)
+        {
+            ((Control)FindName("tbOpt" + index)).BorderBrush = colorBrush;
+            ((Control)FindName("tbOpt" + index + "_0")).BorderBrush = colorBrush;
+            ((Control)FindName("tbOpt" + index + "_1")).BorderBrush = colorBrush;
+            ((Control)FindName("tbOpt" + index + "_2")).BorderBrush = colorBrush;
+            ((Control)FindName("tbOpt" + index + "_3")).BorderBrush = colorBrush;
+        }
+
+        private void SetFilterObjectVisibility(int index, Visibility visibility)
+        {
+            ((ComboBox)FindName("cbOpt" + index)).Visibility = visibility;
+            ((Control)FindName("tbOpt" + index + "_0")).Visibility = visibility;
+            ((Control)FindName("tbOpt" + index + "_1")).Visibility = visibility;
+            ((Control)FindName("tbOpt" + index + "_2")).Visibility = visibility;
+            ((Control)FindName("tbOpt" + index + "_3")).Visibility = visibility;
+        }
+
+        private void SetDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
+        {
+            lbDPS.Content = Helper.CalcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
+        }
+        private void Deduplicationfilter(List<Itemfilter> itemfilters)
+        {
+            for (int i = 0; i < itemfilters.Count; i++)
+            {
+                string txt = ((TextBox)FindName("tbOpt" + i)).Text;
+                if (((CheckBox)FindName("tbOpt" + i + "_2")).IsEnabled == false) continue;
+
+                for (int j = 0; j < itemfilters.Count; j++)
+                {
+                    if (i == j) continue;
+
+                    CheckBox tmpCcheckBox2 = (CheckBox)FindName("tbOpt" + j + "_2");
+                    if (((TextBox)FindName("tbOpt" + j)).Text == txt)
+                    {
+                        tmpCcheckBox2.IsChecked = false;
+                        tmpCcheckBox2.IsEnabled = false;
+                        itemfilters[j].disabled = true;
+                    }
+                }
+            }
+        }
+
         private void AddOptionItem(FilterDictItem filter, double min, double max, string[] cate_ids, bool local_exists,
             int lang, int optionIdx, string dataLabel, List<Itemfilter> itemfilters, ParserDictItem special_option, int is_deep, bool hasResistance, string ft_type, ParserData PS)
         {

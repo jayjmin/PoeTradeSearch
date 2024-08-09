@@ -54,7 +54,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Icon1.ico</ApplicationIcon>
+    <ApplicationIcon>Resource\Icon1.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <SignManifests>false</SignManifests>
@@ -102,66 +102,66 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="App.xaml">
+    <ApplicationDefinition Include="View\App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Contracts.cs" />
-    <Compile Include="CustomEx.cs" />
-    <Compile Include="HotkeyBox.xaml.cs">
+    <Compile Include="Model\Contracts.cs" />
+    <Compile Include="Model\CustomEx.cs" />
+    <Compile Include="View\HotkeyBox.xaml.cs">
       <DependentUpon>HotkeyBox.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Helper.cs" />
-    <Compile Include="ItemOptionParser.cs" />
-    <Compile Include="UpdatePrice.cs" />
-    <Compile Include="Methods.cs" />
-    <Compile Include="Configure.cs" />
-    <Compile Include="Updates.cs" />
-    <Compile Include="WinSetting.xaml.cs">
+    <Compile Include="Controller\Helper.cs" />
+    <Compile Include="Controller\OptionParser.cs" />
+    <Compile Include="Controller\UpdatePrice.cs" />
+    <Compile Include="Controller\Request.cs" />
+    <Compile Include="Model\Configure.cs" />
+    <Compile Include="ViewControl\Updates.cs" />
+    <Compile Include="View\WinSetting.xaml.cs">
       <DependentUpon>WinSetting.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WinStash.xaml.cs">
+    <Compile Include="View\WinStash.xaml.cs">
       <DependentUpon>WinStash.xaml</DependentUpon>
     </Compile>
-    <Page Include="HotkeyBox.xaml">
+    <Page Include="View\HotkeyBox.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="WinGrid.xaml">
+    <Page Include="View\WinGrid.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WinMain.xaml">
+    <Page Include="View\WinMain.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Compile Include="App.xaml.cs">
+    <Compile Include="View\App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Functions.cs" />
-    <Compile Include="WinGrid.xaml.cs">
+    <Compile Include="ViewControl\Functions.cs" />
+    <Compile Include="View\WinGrid.xaml.cs">
       <DependentUpon>WinGrid.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WinMain.xaml.cs">
+    <Compile Include="View\WinMain.xaml.cs">
       <DependentUpon>WinMain.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="WinPopup.xaml">
+    <Page Include="View\WinPopup.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WinSetting.xaml">
+    <Page Include="View\WinSetting.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="WinStash.xaml">
+    <Page Include="View\WinStash.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="WinPopup.xaml.cs">
+    <Compile Include="View\WinPopup.xaml.cs">
       <DependentUpon>WinPopup.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -192,7 +192,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Icon1.ico" />
+    <Resource Include="Resource\Icon1.ico" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
@@ -206,6 +206,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
