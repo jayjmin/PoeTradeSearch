@@ -1,11 +1,38 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using static System.Windows.Forms.AxHost;
 
 namespace PoeTradeSearch
 {
     public partial class WinMain : Window
     {
+        private const int DEFAULT = 99999;
+
+        private double ValueOrZero(double valueWithDefault)
+        {
+            return valueWithDefault == DEFAULT ? 0 : valueWithDefault;
+        }
+
+        private int PseudoResistanceMultiplierElem(string stat)
+        {
+            if (!RS.lResistance.ContainsKey(stat)) {
+                return 1;
+            }
+            return RS.lResistance[stat].Item1;
+        }
+
+        private int PseudoResistanceMultiplierChaos(string stat)
+        {
+            if (!RS.lResistance.ContainsKey(stat))
+            {
+                return 0;
+            }
+            if (RS.lResistance[stat].Item2)
+                return 1;
+            return 0;
+        }
+
         private ItemOption GetItemOptions()
         {
             ItemOption itemOption = new ItemOption
@@ -34,33 +61,33 @@ namespace PoeTradeSearch
             itemOption.ChkLv = ckLv.IsChecked == true;
             itemOption.ByCategory = ckByCategory.IsChecked == true;
 
-            itemOption.SocketMin = tbSocketMin.Text.ToDouble(99999);
-            itemOption.SocketMax = tbSocketMax.Text.ToDouble(99999);
-            itemOption.LinkMin = tbLinksMin.Text.ToDouble(99999);
-            itemOption.LinkMax = tbLinksMax.Text.ToDouble(99999);
-            itemOption.QualityMin = tbQualityMin.Text.ToDouble(99999);
-            itemOption.QualityMax = tbQualityMax.Text.ToDouble(99999);
-            itemOption.LvMin = tbLvMin.Text.ToDouble(99999);
-            itemOption.LvMax = tbLvMax.Text.ToDouble(99999);
+            itemOption.SocketMin = tbSocketMin.Text.ToDouble(DEFAULT);
+            itemOption.SocketMax = tbSocketMax.Text.ToDouble(DEFAULT);
+            itemOption.LinkMin = tbLinksMin.Text.ToDouble(DEFAULT);
+            itemOption.LinkMax = tbLinksMax.Text.ToDouble(DEFAULT);
+            itemOption.QualityMin = tbQualityMin.Text.ToDouble(DEFAULT);
+            itemOption.QualityMax = tbQualityMax.Text.ToDouble(DEFAULT);
+            itemOption.LvMin = tbLvMin.Text.ToDouble(DEFAULT);
+            itemOption.LvMax = tbLvMax.Text.ToDouble(DEFAULT);
 
             itemOption.AltQuality = cbAltQuality.SelectedIndex;
             itemOption.RarityAt = cbRarity.Items.Count > 1 ? cbRarity.SelectedIndex : 0;
-            itemOption.PriceMin = tbPriceFilterMin.Text == "" ? 0 : tbPriceFilterMin.Text.ToDouble(99999);
+            itemOption.PriceMin = tbPriceFilterMin.Text == "" ? 0 : tbPriceFilterMin.Text.ToDouble(DEFAULT);
 
             bool is_ultimatum = (cbRarity.SelectedValue ?? "").Equals("결전");
             itemOption.Flags = is_ultimatum ? "ULTIMATUM|" + cbAltQuality.SelectedValue : "";
-
-            itemOption.itemfilters.Clear();
 
             if (itemOption.Inherits[0] == "gem")
             {
                 itemOption.Flags = cbAltQuality.SelectedValue.ToString();
             }
 
+            itemOption.itemfilters.Clear();
+
             if (!is_ultimatum && itemOption.AltQuality > 0 && itemOption.Inherits[0].WithIn("jewel", "map"))
             {
                 Itemfilter itemfilter = new Itemfilter();
-                itemfilter.min = itemfilter.max = 99999;
+                itemfilter.min = itemfilter.max = DEFAULT;
                 itemfilter.disabled = false;
 
                 if (itemOption.Inherits[0] == "jewel")
@@ -85,70 +112,96 @@ namespace PoeTradeSearch
                 }
             }
 
-            int total_res_idx = -1;
+            int total_elem_res_idx = -1;
+            int total_chaos_res_idx = -1;
 
             for (int i = 0; i < 10; i++)
             {
-                Itemfilter itemfilter = new Itemfilter();
                 ComboBox comboBox = (ComboBox)FindName("cbOpt" + i);
+                if (comboBox.SelectedIndex <= -1)
+                    continue;
 
-                if (comboBox.SelectedIndex > -1)
+                Itemfilter itemfilter = NewItemFilter(i);
+
+                if (itemfilter.disabled == false && ((CheckBox)FindName("tbOpt" + i + "_3")).IsChecked == true)
                 {
-                    itemfilter.text = ((TextBox)FindName("tbOpt" + i)).Text.Trim();
-                    itemfilter.flag = (string)((TextBox)FindName("tbOpt" + i)).Tag;
-                    itemfilter.disabled = ((CheckBox)FindName("tbOpt" + i + "_2")).IsChecked != true;
-                    itemfilter.min = ((TextBox)FindName("tbOpt" + i + "_0")).Text.ToDouble(99999);
-                    itemfilter.max = ((TextBox)FindName("tbOpt" + i + "_1")).Text.ToDouble(99999);
-                    itemfilter.option = null;
+                    // For pseudo resistances, sum up all res into pseudo filter.
+                    itemfilter.min = ValueOrZero(itemfilter.min);
+                    itemfilter.max = ValueOrZero(itemfilter.max);
+                    string stat = ((FilterEntrie)comboBox.SelectedItem).Stat;
 
-                    if (itemfilter.disabled == false && ((CheckBox)FindName("tbOpt" + i + "_3")).IsChecked == true)
+                    int elemMulti = PseudoResistanceMultiplierElem(stat);
+                    if (elemMulti > 0)
                     {
-                        if (total_res_idx == -1)
-                        {
-                            total_res_idx = itemOption.itemfilters.Count;
-                            itemfilter.type = "pseudo";
-                            itemfilter.stat = "pseudo_total_elemental_resistance";
-                        }
-                        else
-                        {
-                            double min = itemOption.itemfilters[total_res_idx].min;
-                            itemOption.itemfilters[total_res_idx].min = (min == 99999 ? 0 : min) + (itemfilter.min == 99999 ? 0 : itemfilter.min);
-                            double max = itemOption.itemfilters[total_res_idx].max;
-                            itemOption.itemfilters[total_res_idx].max = (max == 99999 ? 0 : max) + (itemfilter.max == 99999 ? 0 : itemfilter.max);
-                            continue;
-                        }
+                        total_elem_res_idx = UpsertPseudoItemFilter(itemOption, total_elem_res_idx, "pseudo_total_elemental_resistance", i, itemfilter, elemMulti);
                     }
-                    else
+
+                    int chaosMulti = PseudoResistanceMultiplierChaos(stat);
+                    if (chaosMulti > 0)
                     {
-                        itemfilter.stat = ((FilterEntrie)comboBox.SelectedItem).Stat;
-                        itemfilter.type = ((FilterEntrie)comboBox.SelectedItem).Type;
+                        total_chaos_res_idx = UpsertPseudoItemFilter(itemOption, total_chaos_res_idx, "pseudo_total_chaos_resistance", i, itemfilter, chaosMulti);
+                    }
+                }
+                else
+                {
+                    itemfilter.stat = ((FilterEntrie)comboBox.SelectedItem).Stat;
+                    itemfilter.type = ((FilterEntrie)comboBox.SelectedItem).Type;
 
-                        if (itemfilter.type == "pseudo" && RS.lPseudo.ContainsKey(itemfilter.stat))
-                        {
-                            itemfilter.stat = RS.lPseudo[itemfilter.stat];
-                        }
+                    if (itemfilter.type == "pseudo" && RS.lPseudo.ContainsKey(itemfilter.stat))
+                    {
+                        itemfilter.stat = RS.lPseudo[itemfilter.stat];
+                    }
 
-                        if (itemfilter.flag == "CLUSTER" || itemfilter.flag == "LOGBOOK")
-                        {
-                            itemfilter.option = itemfilter.min;
-                            if (itemfilter.flag == "CLUSTER") itemfilter.min = 99999;
-                        }
+                    if (itemfilter.flag == "CLUSTER" || itemfilter.flag == "LOGBOOK")
+                    {
+                        itemfilter.option = itemfilter.min;
+                        if (itemfilter.flag == "CLUSTER") itemfilter.min = DEFAULT;
                     }
 
                     itemOption.itemfilters.Add(itemfilter);
                 }
             }
 
-            // 총 저항은 min 값만 필요
-            if (total_res_idx > -1)
-            {
-                double min = itemOption.itemfilters[total_res_idx].min;
-                double max = itemOption.itemfilters[total_res_idx].max;
-                itemOption.itemfilters[total_res_idx].min = (min == 99999 ? 0 : min) + (max == 99999 ? 0 : max);
-                itemOption.itemfilters[total_res_idx].max = 99999;
-            }
+            if (total_elem_res_idx > -1 && itemOption.itemfilters[total_elem_res_idx].max == 0)
+                itemOption.itemfilters[total_elem_res_idx].max = 99999;
+
+            if (total_chaos_res_idx > -1 && itemOption.itemfilters[total_chaos_res_idx].max == 0)
+                itemOption.itemfilters[total_chaos_res_idx].max = 99999;
 
             return itemOption;
+        }
+
+        private int UpsertPseudoItemFilter(ItemOption itemOption, int pseudoFilterIdx, string pseudoStat, int optionIdx, Itemfilter filter, double multiplier)
+        {
+            if (pseudoFilterIdx == -1)
+            {
+                Itemfilter pseudoFilter = NewItemFilter(optionIdx);
+                pseudoFilter.type = "pseudo";
+                pseudoFilter.stat = pseudoStat;
+                pseudoFilter.min = 0;
+                pseudoFilter.max = 0;
+                pseudoFilterIdx = itemOption.itemfilters.Count;
+
+                itemOption.itemfilters.Add(pseudoFilter);
+            }
+
+            itemOption.itemfilters[pseudoFilterIdx].min += filter.min * multiplier;
+            itemOption.itemfilters[pseudoFilterIdx].max += filter.max * multiplier;
+            return pseudoFilterIdx;
+        }
+
+        private Itemfilter NewItemFilter(int optionIdx)
+        {
+            Itemfilter itemfilter = new Itemfilter
+            {
+                text = ((TextBox)FindName("tbOpt" + optionIdx)).Text.Trim(),
+                flag = (string)((TextBox)FindName("tbOpt" + optionIdx)).Tag,
+                disabled = ((CheckBox)FindName("tbOpt" + optionIdx + "_2")).IsChecked != true,
+                min = ((TextBox)FindName("tbOpt" + optionIdx + "_0")).Text.ToDouble(DEFAULT),
+                max = ((TextBox)FindName("tbOpt" + optionIdx + "_1")).Text.ToDouble(DEFAULT),
+                option = null
+            };
+            return itemfilter;
         }
     }
 }
