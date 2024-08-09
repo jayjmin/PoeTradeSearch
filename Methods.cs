@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace PoeTradeSearch
@@ -127,9 +122,9 @@ namespace PoeTradeSearch
             ((Control)FindName("tbOpt" + index + "_3")).Visibility = visibility;
         }
 
-        private void setDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
+        private void SetDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
         {
-            lbDPS.Content = Helper.calcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
+            lbDPS.Content = Helper.CalcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
         }
 
         private void Deduplicationfilter(List<Itemfilter> itemfilters)
@@ -171,8 +166,10 @@ namespace PoeTradeSearch
 
             try
             {
-                JsonData jsonData = new JsonData();
-                jsonData.Query = new q_Query();
+                JsonData jsonData = new JsonData
+                {
+                    Query = new q_Query()
+                };
                 q_Query JQ = jsonData.Query;
 
                 jsonData.Sort.Price = "asc";
@@ -259,9 +256,11 @@ namespace PoeTradeSearch
                 if (itemOptions.itemfilters.Count > 0)
                 {
                     JQ.Stats = new q_Stats[1];
-                    JQ.Stats[0] = new q_Stats();
-                    JQ.Stats[0].Type = "and";
-                    JQ.Stats[0].Filters = new q_Stats_filters[itemOptions.itemfilters.Count];
+                    JQ.Stats[0] = new q_Stats
+                    {
+                        Type = "and",
+                        Filters = new q_Stats_filters[itemOptions.itemfilters.Count]
+                    };
 
                     int idx = 0;
 
@@ -287,8 +286,10 @@ namespace PoeTradeSearch
 
                                 FilterDictItem filter = Array.Find(filterDict.Entries, x => x.Id == type + "." + stat);
 
-                                JQ.Stats[0].Filters[idx] = new q_Stats_filters();
-                                JQ.Stats[0].Filters[idx].Value = new q_Min_And_Max();
+                                JQ.Stats[0].Filters[idx] = new q_Stats_filters
+                                {
+                                    Value = new q_Min_And_Max()
+                                };
 
                                 if (filter != null && (filter.Id ?? "").Trim() != "")
                                 {
@@ -330,9 +331,11 @@ namespace PoeTradeSearch
 
                 if (Inherit == "gem" && itemOptions.Name != "")
                 {
-                    TransfiguredGemType gemType = new TransfiguredGemType();
-                    gemType.Option = itemOptions.Type;
-                    gemType.Discriminator = itemOptions.Flags; // alt_x or alt_y
+                    TransfiguredGemType gemType = new TransfiguredGemType
+                    {
+                        Option = itemOptions.Type,
+                        Discriminator = itemOptions.Flags // alt_x or alt_y
+                    };
                     string transType = Json.Serialize<TransfiguredGemType>(gemType);
                     sEntity = sEntity.Replace("\"type\":\"" + JQ.Type + "\",", "\"type\":" + transType + ",");
                 }

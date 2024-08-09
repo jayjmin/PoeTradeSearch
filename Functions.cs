@@ -6,7 +6,6 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Json;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 
@@ -156,7 +155,7 @@ namespace PoeTradeSearch
             }
         }
 
-        private static Native.LowLevelMouseProc _proc = HookCallback;
+        private static readonly Native.LowLevelMouseProc _proc = HookCallback;
         private static IntPtr _hookID = IntPtr.Zero;
 
         private static IntPtr SetHook(Native.LowLevelMouseProc proc)
@@ -180,10 +179,12 @@ namespace PoeTradeSearch
                         {
                             MSLLHOOKSTRUCT hookStruct = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
                             int GET_WHEEL_DELTA_WPARAM = (short)(hookStruct.mouseData >> 0x10); // HIWORD
-                            MouseEventArgs mouseEventArgs = new MouseEventArgs();
-                            mouseEventArgs.zDelta = GET_WHEEL_DELTA_WPARAM;
-                            mouseEventArgs.x = hookStruct.pt.x;
-                            mouseEventArgs.y = hookStruct.pt.y;
+                            MouseEventArgs mouseEventArgs = new MouseEventArgs
+                            {
+                                zDelta = GET_WHEEL_DELTA_WPARAM,
+                                X = hookStruct.pt.x,
+                                Y = hookStruct.pt.y
+                            };
                             MouseAction(null, mouseEventArgs);
                         }
                         catch { }
@@ -201,8 +202,8 @@ namespace PoeTradeSearch
         public class MouseEventArgs : EventArgs
         {
             public int zDelta { get; set; }
-            public int x { get; set; }
-            public int y { get; set; }
+            public int X { get; set; }
+            public int Y { get; set; }
         }
 
         private enum MouseMessages
@@ -364,6 +365,7 @@ namespace PoeTradeSearch
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                Console.WriteLine(entity);
                 return null;
             }
 
@@ -372,8 +374,6 @@ namespace PoeTradeSearch
 
         private string GetLapsedTime(string utc)
         {
-            string timeString = string.Empty;
-
             DateTime dateTime = DateTime.ParseExact(utc, "yyyy-MM-dd'T'HH:mm:ss'Z'",
                                            CultureInfo.InvariantCulture,
                                            DateTimeStyles.AssumeUniversal |

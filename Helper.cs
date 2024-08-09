@@ -1,24 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Forms;
-using System.Windows.Media;
-using System.Windows.Threading;
-using static PoeTradeSearch.Native;
-using static System.Net.WebRequestMethods;
 
 namespace PoeTradeSearch
 {
     internal static class Helper
     {
-        public static int selectServerLang(int serverTypeConfig, int clientLang)
+        public static int SelectServerLang(int serverTypeConfig, int clientLang)
         {
             // serverTypeConfig: Auto(0), Korean(1), English(2) - check 'cbServerType'
             // clientLang: Korean(0), English(1)
@@ -29,7 +16,7 @@ namespace PoeTradeSearch
             return clientLang;
         }
 
-        public static string calcDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
+        public static string CalcDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
         {
             // DPS 계산 POE-TradeMacro 참고
             double physicalDPS = DamageToDPS(physical);

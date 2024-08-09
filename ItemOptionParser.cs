@@ -1,26 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Markup;
 using System.Windows.Media;
-using System.Windows.Threading;
-using static PoeTradeSearch.Native;
-using static System.Net.WebRequestMethods;
 
 namespace PoeTradeSearch
 {
     public partial class WinMain : Window
     {
-        private void addOptionItem(FilterDictItem filter, double min, double max, string[] cate_ids, bool local_exists, 
+        private void AddOptionItem(FilterDictItem filter, double min, double max, string[] cate_ids, bool local_exists,
             int lang, int optionIdx, string dataLabel, List<Itemfilter> itemfilters, ParserDictItem special_option, int is_deep, bool hasResistance, string ft_type, ParserData PS)
         {
             // This fuction adds one search option line in the main box to select min/max value to search.
@@ -78,9 +69,7 @@ namespace PoeTradeSearch
             ParserDictItem force_pos = Array.Find(PS.Position.Entries, x => x.Id.Equals(split_id[1]));
             if (force_pos?.Key == "reverse" || force_pos?.Key == "right")
             {
-                double tmp2 = min;
-                min = max;
-                max = tmp2;
+                (max, min) = (min, max);
             }
 
             Itemfilter itemFilter = new Itemfilter
@@ -165,7 +154,7 @@ namespace PoeTradeSearch
         }
 
 
-        private string findMapInfluenced(string parsedOption, ParserData PS, byte lang, string[] cate_ids)
+        private string FindMapInfluenced(string parsedOption, ParserData PS, byte lang, string[] cate_ids)
         {
             string input = parsedOption.RepEx(@"\s(\([a-zA-Z]+\)|—\s.+)$", "");
             string ft_type = parsedOption.Split(new string[] { "\n" }, 0)[0].RepEx(@"(.+)\s\(([a-zA-Z]+)\)$", "$2");
@@ -186,7 +175,7 @@ namespace PoeTradeSearch
             }
             return null;
         }
-        private (string, ParserDictItem, string) optionToFilter(string parsedOption, ParserData PS, byte lang, Dictionary<string, string> itemBaseInfo, string[] cate_ids, ParserDictItem special_option, string[] asSplit)
+        private (string, ParserDictItem, string) OptionToFilter(string parsedOption, ParserData PS, byte lang, Dictionary<string, string> itemBaseInfo, string[] cate_ids, ParserDictItem special_option, string[] asSplit)
         {
             string input = parsedOption.RepEx(@"\s(\([a-zA-Z]+\)|—\s.+)$", "");
             string ft_type = parsedOption.Split(new string[] { "\n" }, 0)[0].RepEx(@"(.+)\s\(([a-zA-Z]+)\)$", "$2");
@@ -228,61 +217,278 @@ namespace PoeTradeSearch
             return (input, special_option, ft_type);
         }
 
-        private void ItemTextParser(string itemText, bool isWinShow = true)
+        private (Dictionary<string, string>, List<Itemfilter>, double, double, string) ParseOption(string[] asData, ParserData PS, byte lang, string itemType, string[] cate_ids)
         {
-            int[] SocketParser(string socket)
+            double attackSpeedIncr = 0, PhysicalDamageIncr = 0;
+            string map_influenced = "";
+
+            List<Itemfilter> itemfilters = new List<Itemfilter>();
+
+            Dictionary<string, string> itemBaseInfo = new Dictionary<string, string>()
+                    {
+                        { PS.Quality.Text[lang], "" }, { PS.Level.Text[lang], "" }, { PS.ItemLevel.Text[lang], "" }, { PS.AreaLevel.Text[lang], "" }, { PS.TalismanTier.Text[lang], "" }, { PS.MapTier.Text[lang], "" },
+                        { PS.Sockets.Text[lang], "" }, { PS.Heist.Text[lang], "" }, { PS.MapUltimatum.Text[lang], "" }, { PS.RewardUltimatum.Text[lang], "" },
+                        { PS.Radius.Text[lang], "" },  { PS.DeliriumReward.Text[lang], "" }, { PS.MonsterGenus.Text[lang], "" }, { PS.MonsterGroup.Text[lang], "" },
+                        { PS.PhysicalDamage.Text[lang], "" }, { PS.ElementalDamage.Text[lang], "" }, { PS.ChaosDamage.Text[lang], "" }, { PS.AttacksPerSecond.Text[lang], "" },
+                        { PS.ShaperItem.Text[lang], "" }, { PS.ElderItem.Text[lang], "" }, { PS.CrusaderItem.Text[lang], "" }, { PS.RedeemerItem.Text[lang], "" },
+                        { PS.HunterItem.Text[lang], "" }, { PS.WarlordItem.Text[lang], "" }, { PS.SynthesisedItem.Text[lang], "" },
+                        { PS.Corrupted.Text[lang], "" }, { PS.Unidentified.Text[lang], "" }, { PS.ProphecyItem.Text[lang], "" }, { PS.Vaal.Text[lang] + " " + itemType, "" }
+                    };
+
+            // Number of actual options shown in the Window.
+            int optionIdx = 0;
+
+            // For loop to iterate copied text from the item, parse, and store into data structure
+            // 시즌이 지날수록 땜질을 많이해 점점 복잡지는 소스 언제 정리하지?...
+            for (int i = 1; i < asData.Length; i++)
             {
-                int sckcnt = socket.Replace(" ", "-").Split('-').Length;
-                string[] scklinks = socket.Split(' ');
+                string[] asOpts = asData[i].Split(new string[] { "\r\n" }, 0).Select(x => x.Trim()).ToArray();
 
-                int lnkcnt = 0;
-                for (int s = 0; s < scklinks.Length; s++)
+                for (int j = 0; j < asOpts.Length; j++)
                 {
-                    if (lnkcnt < scklinks[s].Length) lnkcnt = scklinks[s].Length;
-                }
+                    if (asOpts[j].Trim().IsEmpty()) continue;
 
-                return new int[] { sckcnt, lnkcnt < 3 ? 0 : lnkcnt - (int)Math.Ceiling((double)lnkcnt / 2) + 1 };
+                    int is_deep = -1;
+                    bool is_multi_line = false;
+                    List<string> parsedOptions = ItemOptionParser(asOpts[j], PS.OptionTier.Text[lang], ref is_deep, ref is_multi_line);
+
+                    bool firstOption = true;
+                    foreach (string parsedOption in parsedOptions)
+                    {
+                        firstOption = false;
+                        string[] asSplit = parsedOption.Replace(@" \([\w\s]+\)", "").Split(':').Select(x => x.Trim()).ToArray();
+
+                        if (itemBaseInfo.ContainsKey(asSplit[0]))
+                        {
+                            if (itemBaseInfo[asSplit[0]] == "")
+                                itemBaseInfo[asSplit[0]] = asSplit.Length > 1 ? asSplit[1] : "_TRUE_";
+
+                            continue;
+                        }
+
+                        if (optionIdx < 10 && (!itemBaseInfo[PS.ItemLevel.Text[lang]].IsEmpty() || !itemBaseInfo[PS.MapUltimatum.Text[lang]].IsEmpty()))
+                        {
+                            ParserDictItem special_option = null;
+                            string input = "";
+                            string ft_type = "";
+
+                            string mapInfluenced = FindMapInfluenced(parsedOption, PS, lang, cate_ids);
+                            if (mapInfluenced != null)
+                            {
+                                map_influenced = mapInfluenced;
+                                continue;
+                            }
+
+                            (input, special_option, ft_type) = OptionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
+
+                            input = Regex.Escape(Regex.Replace(input, @"[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+", "#"));
+                            input = Regex.Replace(input, @"\\#", @"[+-]?([0-9]+\.[0-9]+|[0-9]+|\#)");
+
+                            bool local_exists = false;
+                            FilterDictItem filter = null;
+                            string dataLabel = null;
+                            bool hasResistance = false; // 저항
+                            double min = 99999, max = 99999;
+
+                            foreach (FilterDict data_result in mFilter[lang].Result)
+                            {
+                                Regex rgx = new Regex("^" + input + "$", RegexOptions.IgnoreCase);
+                                FilterDictItem[] entries = Array.FindAll(data_result.Entries, x => rgx.IsMatch(x.Text));
+                                // "동작 속도 #% 증가" 처럼, 내부적으로는 음수로 계산할 경우를 위해
+                                bool reverseFlag = false;
+                                for (int l = 0; l < PS.ReverseIncreaseDecrease.Entries.Length; l++)
+                                {
+                                    if (input.Contains(PS.ReverseIncreaseDecrease.Entries[l].Text[lang]))
+                                    {
+                                        string input_tmp = Regex.Replace(input, PS.ReverseIncreaseDecrease.Entries[l].Text[lang], PS.ReverseIncreaseDecrease.Entries[l % 2 == 0 ? l + 1 : l - 1].Text[lang]);
+                                        Regex rgx_tmp = new Regex("^" + input_tmp + "$", RegexOptions.IgnoreCase);
+                                        FilterDictItem[] entries_tmp = Array.FindAll(data_result.Entries, x => rgx_tmp.IsMatch(x.Text));
+                                        if (entries_tmp.Length > 0)
+                                        {
+                                            if (entries.Length == 0) reverseFlag = true;
+                                            entries = entries.Concat(entries_tmp).ToArray();
+                                        }
+                                        break;
+                                    }
+                                }
+
+                                // 2개 이상 같은 옵션이 있을때 장비 옵션 (특정) 만 추출
+                                if (entries.Length > 1)
+                                {
+                                    FilterDictItem[] entries_tmp = Array.FindAll(entries, x => x.Part == cate_ids[0]);
+                                    // 화살통 제외
+                                    if (entries_tmp.Length > 0 && (cate_ids.Length == 1 || cate_ids[1] != "quiver"))
+                                    {
+                                        local_exists = true;
+                                        entries = entries_tmp;
+                                    }
+                                    else
+                                    {
+                                        entries = Array.FindAll(entries, x => x.Part == null);
+                                    }
+                                }
+
+                                if (entries.Length > 0)
+                                {
+                                    Array.Sort(entries, delegate (FilterDictItem entrie1, FilterDictItem entrie2)
+                                    {
+                                        return (entrie2.Part ?? "").CompareTo(entrie1.Part ?? "");
+                                    });
+
+                                    MatchCollection matches1 = Regex.Matches(parsedOption, @"[-]?([0-9]+\.[0-9]+|[0-9]+)");
+                                    foreach (FilterDictItem entrie in entries)
+                                    {
+                                        string[] split_id = entrie.Id.Split('.');
+                                        int excludeId = Array.FindIndex(PS.ExcludeStat.Entries, x => x.Id == split_id[1] && x.Key == cate_ids[0]);
+                                        if (excludeId != -1)
+                                            continue; // do not use the stat ID from exclude_test defined in Parser.txt
+
+                                        int idxMin = 0, idxMax = 0;
+                                        bool isMin = false, isMax = false;
+                                        bool isMatch = true;
+
+                                        MatchCollection matches2 = Regex.Matches(entrie.Text.Split('\n')[0], @"[-]?([0-9]+\.[0-9]+|[0-9]+|#)");
+
+                                        for (int t = 0; t < matches2.Count; t++)
+                                        {
+                                            if (matches2[t].Value == "#")
+                                            {
+                                                if (reverseFlag)
+                                                {
+                                                    if (!isMax)
+                                                    {
+                                                        isMax = true;
+                                                        idxMax = t;
+                                                    }
+                                                    else if (!isMin)
+                                                    {
+                                                        isMin = true;
+                                                        idxMin = t;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (!isMin)
+                                                    {
+                                                        isMin = true;
+                                                        idxMin = t;
+                                                    }
+                                                    else if (!isMax)
+                                                    {
+                                                        isMax = true;
+                                                        idxMax = t;
+                                                    }
+                                                }
+                                            }
+                                            else if (matches1[t].Value != matches2[t].Value)
+                                            {
+                                                isMatch = false;
+                                                break;
+                                            }
+                                        }
+
+                                        if (isMatch)
+                                        {
+                                            dataLabel = data_result.Label;
+
+                                            (FindName("cbOpt" + optionIdx) as ComboBox).Items.Add(new FilterEntrie(cate_ids[0], split_id[0], split_id[1], dataLabel));
+
+                                            if (filter == null)
+                                            {
+                                                filter = entrie;
+                                                hasResistance = split_id.Length == 2 && RS.lResistance.ContainsKey(split_id[1]);
+                                                if (reverseFlag)
+                                                {
+                                                    max = isMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) * -1 : -99999;
+                                                    min = isMin && idxMax > idxMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) * -1 : 99999;
+                                                }
+                                                else
+                                                {
+                                                    min = isMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) : 99999;
+                                                    max = isMax && idxMin < idxMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) : 99999;
+                                                }
+                                            }
+
+                                            break;
+                                        }
+                                    }
+                                }
+
+                            }
+
+                            if (filter != null)
+                            {
+                                AddOptionItem(filter, min, max, cate_ids, local_exists, lang, optionIdx, dataLabel, itemfilters, special_option, is_deep, hasResistance, ft_type, PS);
+
+                                attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[lang] && min.WithIn(1, 999) ? min : 0;
+                                PhysicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
+
+                                optionIdx++;
+                                if (firstOption && is_multi_line) break; // break if multi lines
+
+                            }
+                        }
+                    }
+                }
             }
 
-            string[] ItemBaseParser(string[] opts)
+            return (itemBaseInfo, itemfilters, attackSpeedIncr, PhysicalDamageIncr, map_influenced);
+
+        }
+
+        List<string> ItemOptionParser(string opts, string tier, ref int is_deep, ref bool is_multi_line)
+        {
+            List<string> options = new List<string>();
+            string[] tmp = opts.Split(new string[] { "\n" }, 0).Select(x => x.Trim()).ToArray();
+            is_deep = tmp[0][0] == '{' && tmp.Length > 1 ? 0 : -1;
+
+            if (tmp.Length == (is_deep == 0 ? 3 : 2))
             {
-                string category = opts[0].Split(':')[1].Trim(); // 종류. 갑옷, 장갑 등
-                string rarity = opts[1].Split(':')[1].Trim(); // 희귀도. 레어, 마법 등
-                string name = Regex.Replace(opts[2] ?? "", @"<<set:[A-Z]+>>", "");
-                bool b = opts.Length > 3 && opts[3] != ""; // 일반, 마법 등급은 3번줄의 아이템 이름(예. 소름 끼치는 조임쇠)이 없음. 4번줄이 있을 경우 true
-                return new string[] { category, rarity, b ? name : "",
+                is_multi_line = true;
+                options.Add(tmp[0 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[1 + (is_deep == 0 ? 1 : 0)]);
+            }
+            if (tmp.Length == (is_deep == 0 ? 4 : 3))
+            {
+                is_multi_line = true;
+                options.Add(tmp[0 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[1 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[2 + (is_deep == 0 ? 1 : 0)]);
+            }
+
+            for (int ssi = 0; ssi < tmp.Length - (is_deep == 0 ? 1 : 0); ssi++)
+            {
+                options.Add(tmp[ssi + (is_deep == 0 ? 1 : 0)].RepEx(@"([0-9]+)\([0-9\.\+\-]*[0-9]+\)", "$1"));
+            }
+
+            is_deep = is_deep == 0 ? tmp[0].RepEx(@"^.+\s\(" + tier + @": ([0-9])\)\s—.+$", "$1").ToInt(0) : is_deep;
+            return options;
+        }
+
+        int[] SocketParser(string socket)
+        {
+            int sckcnt = socket.Replace(" ", "-").Split('-').Length;
+            string[] scklinks = socket.Split(' ');
+
+            int lnkcnt = 0;
+            for (int s = 0; s < scklinks.Length; s++)
+            {
+                if (lnkcnt < scklinks[s].Length) lnkcnt = scklinks[s].Length;
+            }
+
+            return new int[] { sckcnt, lnkcnt < 3 ? 0 : lnkcnt - (int)Math.Ceiling((double)lnkcnt / 2) + 1 };
+        }
+
+        string[] ItemBaseParser(string[] opts)
+        {
+            string category = opts[0].Split(':')[1].Trim(); // 종류. 갑옷, 장갑 등
+            string rarity = opts[1].Split(':')[1].Trim(); // 희귀도. 레어, 마법 등
+            string name = Regex.Replace(opts[2] ?? "", @"<<set:[A-Z]+>>", "");
+            bool b = opts.Length > 3 && opts[3] != ""; // 일반, 마법 등급은 3번줄의 아이템 이름(예. 소름 끼치는 조임쇠)이 없음. 4번줄이 있을 경우 true
+            return new string[] { category, rarity, b ? name : "",
                     b ? Regex.Replace(opts[3] ?? "", @"<<set:[A-Z]+>>", "") : name
                 };
-            }
+        }
 
-            List<string> ItemOptionParser(string opts, string tier, ref int is_deep, ref bool is_multi_line)
-            {
-                List<string> options = new List<string>();
-                string[] tmp = opts.Split(new string[] { "\n" }, 0).Select(x => x.Trim()).ToArray();
-                is_deep = tmp[0][0] == '{' && tmp.Length > 1 ? 0 : -1;
-
-                if (tmp.Length == (is_deep == 0 ? 3 : 2))
-                {
-                    is_multi_line = true;
-                    options.Add(tmp[0 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[1 + (is_deep == 0 ? 1 : 0)]);
-                }
-                if (tmp.Length == (is_deep == 0 ? 4 : 3))
-                {
-                    is_multi_line = true;
-                    options.Add(tmp[0 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[1 + (is_deep == 0 ? 1 : 0)] + "\n" + tmp[2 + (is_deep == 0 ? 1 : 0)]);
-                }
-
-                for (int ssi = 0; ssi < tmp.Length - (is_deep == 0 ? 1 : 0); ssi++)
-                {
-                    options.Add(tmp[ssi + (is_deep == 0 ? 1 : 0)].RepEx(@"([0-9]+)\([0-9\.\+\-]*[0-9]+\)", "$1"));
-                }
-
-                is_deep = is_deep == 0 ? tmp[0].RepEx(@"^.+\s\(" + tier + @": ([0-9])\)\s—.+$", "$1").ToInt(0) : is_deep;
-                return options;
-            }
-
-            //TODO 위키 보기시 이름만 빼자
-            string map_influenced = "";
+        private void ItemParser(string itemText, bool isWinShow = true)
+        {
 
             // PS stores data loaded from Parser.txt file.
             ParserData PS = mParser;
@@ -312,218 +518,15 @@ namespace PoeTradeSearch
                     ParserDictItem category = Array.Find(PS.Category.Entries, x => x.Text[lang] == ibase_info[0]); // category
                     string[] cate_ids = category != null ? category.Id.Split('.') : new string[] { "" }; // ex) {"id":"armour.chest","key":"armour","text":[ "갑옷", "Body Armours" ]}
                     ParserDictItem rarity = Array.Find(PS.Rarity.Entries, x => x.Text[lang] == ibase_info[1]); // rarity
-                    rarity = rarity == null ? new ParserDictItem() { Id = "", Text = new string[] { ibase_info[1], ibase_info[1] } } : rarity; // ex) {"id":"rare","text":[ "희귀", "Rare" ]}
+                    rarity = rarity ?? new ParserDictItem() { Id = "", Text = new string[] { ibase_info[1], ibase_info[1] } }; // ex) {"id":"rare","text":[ "희귀", "Rare" ]}
+                    string itemType = ibase_info[3];
 
-                    int optionIdx = 0;
                     double attackSpeedIncr = 0, PhysicalDamageIncr = 0;
+                    List<Itemfilter> itemfilters;
+                    Dictionary<string, string> itemBaseInfo;
+                    string map_influenced;
 
-                    List<Itemfilter> itemfilters = new List<Itemfilter>();
-
-                    Dictionary<string, string> itemBaseInfo = new Dictionary<string, string>()
-                    {
-                        { PS.Quality.Text[lang], "" }, { PS.Level.Text[lang], "" }, { PS.ItemLevel.Text[lang], "" }, { PS.AreaLevel.Text[lang], "" }, { PS.TalismanTier.Text[lang], "" }, { PS.MapTier.Text[lang], "" },
-                        { PS.Sockets.Text[lang], "" }, { PS.Heist.Text[lang], "" }, { PS.MapUltimatum.Text[lang], "" }, { PS.RewardUltimatum.Text[lang], "" },
-                        { PS.Radius.Text[lang], "" },  { PS.DeliriumReward.Text[lang], "" }, { PS.MonsterGenus.Text[lang], "" }, { PS.MonsterGroup.Text[lang], "" },
-                        { PS.PhysicalDamage.Text[lang], "" }, { PS.ElementalDamage.Text[lang], "" }, { PS.ChaosDamage.Text[lang], "" }, { PS.AttacksPerSecond.Text[lang], "" },
-                        { PS.ShaperItem.Text[lang], "" }, { PS.ElderItem.Text[lang], "" }, { PS.CrusaderItem.Text[lang], "" }, { PS.RedeemerItem.Text[lang], "" },
-                        { PS.HunterItem.Text[lang], "" }, { PS.WarlordItem.Text[lang], "" }, { PS.SynthesisedItem.Text[lang], "" },
-                        { PS.Corrupted.Text[lang], "" }, { PS.Unidentified.Text[lang], "" }, { PS.ProphecyItem.Text[lang], "" }, { PS.Vaal.Text[lang] + " " + ibase_info[3], "" }
-                    };
-
-                    // For loop to iterate copied text from the item, parse, and store into data structure
-                    // 시즌이 지날수록 땜질을 많이해 점점 복잡지는 소스 언제 정리하지?...
-                    for (int i = 1; i < asData.Length; i++)
-                    {
-                        string[] asOpts = asData[i].Split(new string[] { "\r\n" }, 0).Select(x => x.Trim()).ToArray();
-
-                        for (int j = 0; j < asOpts.Length; j++)
-                        {
-                            if (asOpts[j].Trim().IsEmpty()) continue;
-
-                            int is_deep = -1;
-                            bool is_multi_line = false;
-                            List<string> parsedOptions = ItemOptionParser(asOpts[j], PS.OptionTier.Text[lang], ref is_deep, ref is_multi_line);
-
-                            bool firstOption = true;
-                            foreach (string parsedOption in parsedOptions)
-                            {
-                                firstOption = false;
-                                string[] asSplit = parsedOption.Replace(@" \([\w\s]+\)", "").Split(':').Select(x => x.Trim()).ToArray();
-
-                                if (itemBaseInfo.ContainsKey(asSplit[0]))
-                                {
-                                    if (itemBaseInfo[asSplit[0]] == "")
-                                        itemBaseInfo[asSplit[0]] = asSplit.Length > 1 ? asSplit[1] : "_TRUE_";
-
-                                    continue;
-                                }
-
-                                if (optionIdx < 10 && (!itemBaseInfo[PS.ItemLevel.Text[lang]].IsEmpty() || !itemBaseInfo[PS.MapUltimatum.Text[lang]].IsEmpty()))
-                                {
-                                    ParserDictItem special_option = null;
-                                    string input = "";
-                                    string ft_type = "";
-
-                                    string mapInfluenced = findMapInfluenced(parsedOption, PS, lang, cate_ids);
-                                    if (mapInfluenced != null)
-                                    {
-                                        map_influenced = mapInfluenced;
-                                        continue;
-                                    }
-
-                                    (input, special_option, ft_type) = optionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
-
-                                    input = Regex.Escape(Regex.Replace(input, @"[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+", "#"));
-                                    input = Regex.Replace(input, @"\\#", @"[+-]?([0-9]+\.[0-9]+|[0-9]+|\#)");
-
-                                    bool local_exists = false;
-                                    FilterDictItem filter = null;
-                                    string dataLabel = null;
-                                    bool hasResistance = false; // 저항
-                                    double min = 99999, max = 99999;
-
-                                    foreach (FilterDict data_result in mFilter[lang].Result)
-                                    {
-                                        Regex rgx = new Regex("^" + input + "$", RegexOptions.IgnoreCase);
-                                        FilterDictItem[] entries = Array.FindAll(data_result.Entries, x => rgx.IsMatch(x.Text));
-                                        // "동작 속도 #% 증가" 처럼, 내부적으로는 음수로 계산할 경우를 위해
-                                        bool reverseFlag = false;
-                                        for (int l = 0; l < PS.ReverseIncreaseDecrease.Entries.Length; l++)
-                                        {
-                                            if (input.Contains(PS.ReverseIncreaseDecrease.Entries[l].Text[lang]))
-                                            {
-                                                string input_tmp = Regex.Replace(input, PS.ReverseIncreaseDecrease.Entries[l].Text[lang], PS.ReverseIncreaseDecrease.Entries[l % 2 == 0 ? l + 1 : l - 1].Text[lang]);
-                                                Regex rgx_tmp = new Regex("^" + input_tmp + "$", RegexOptions.IgnoreCase);
-                                                FilterDictItem[] entries_tmp = Array.FindAll(data_result.Entries, x => rgx_tmp.IsMatch(x.Text));
-                                                if (entries_tmp.Length > 0)
-                                                {
-                                                    if (entries.Length == 0) reverseFlag = true;
-                                                    entries = entries.Concat(entries_tmp).ToArray();
-                                                }
-                                                break;
-                                            }
-                                        }
-
-                                        // 2개 이상 같은 옵션이 있을때 장비 옵션 (특정) 만 추출
-                                        if (entries.Length > 1)
-                                        {
-                                            FilterDictItem[] entries_tmp = Array.FindAll(entries, x => x.Part == cate_ids[0]);
-                                            // 화살통 제외
-                                            if (entries_tmp.Length > 0 && (cate_ids.Length == 1 || cate_ids[1] != "quiver"))
-                                            {
-                                                local_exists = true;
-                                                entries = entries_tmp;
-                                            }
-                                            else
-                                            {
-                                                entries = Array.FindAll(entries, x => x.Part == null);
-                                            }
-                                        }
-
-                                        if (entries.Length > 0)
-                                        {
-                                            Array.Sort(entries, delegate (FilterDictItem entrie1, FilterDictItem entrie2)
-                                            {
-                                                return (entrie2.Part ?? "").CompareTo(entrie1.Part ?? "");
-                                            });
-
-                                            MatchCollection matches1 = Regex.Matches(parsedOption, @"[-]?([0-9]+\.[0-9]+|[0-9]+)");
-                                            foreach (FilterDictItem entrie in entries)
-                                            {
-                                                string[] split_id = entrie.Id.Split('.');
-                                                int excludeId = Array.FindIndex(PS.ExcludeStat.Entries, x => x.Id == split_id[1] && x.Key == cate_ids[0]);
-                                                if (excludeId != -1)
-                                                    continue; // do not use the stat ID from exclude_test defined in Parser.txt
-
-                                                int idxMin = 0, idxMax = 0;
-                                                bool isMin = false, isMax = false;
-                                                bool isMatch = true;
-
-                                                MatchCollection matches2 = Regex.Matches(entrie.Text.Split('\n')[0], @"[-]?([0-9]+\.[0-9]+|[0-9]+|#)");
-
-                                                for (int t = 0; t < matches2.Count; t++)
-                                                {
-                                                    if (matches2[t].Value == "#")
-                                                    {
-                                                        if (reverseFlag)
-                                                        {
-                                                            if (!isMax)
-                                                            {
-                                                                isMax = true;
-                                                                idxMax = t;
-                                                            }
-                                                            else if (!isMin)
-                                                            {
-                                                                isMin = true;
-                                                                idxMin = t;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            if (!isMin)
-                                                            {
-                                                                isMin = true;
-                                                                idxMin = t;
-                                                            }
-                                                            else if (!isMax)
-                                                            {
-                                                                isMax = true;
-                                                                idxMax = t;
-                                                            }
-                                                        }
-                                                    }
-                                                    else if (matches1[t].Value != matches2[t].Value)
-                                                    {
-                                                        isMatch = false;
-                                                        break;
-                                                    }
-                                                }
-
-                                                if (isMatch)
-                                                {
-                                                    dataLabel = data_result.Label;
-
-                                                    (FindName("cbOpt" + optionIdx) as ComboBox).Items.Add(new FilterEntrie(cate_ids[0], split_id[0], split_id[1], dataLabel));
-
-                                                    if (filter == null)
-                                                    {
-                                                        filter = entrie;
-                                                        hasResistance = split_id.Length == 2 && RS.lResistance.ContainsKey(split_id[1]);
-                                                        if (reverseFlag)
-                                                        {
-                                                            max = isMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) * -1 : -99999;
-                                                            min = isMin && idxMax > idxMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) * -1 : 99999;
-                                                        }
-                                                        else
-                                                        {
-                                                            min = isMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) : 99999;
-                                                            max = isMax && idxMin < idxMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) : 99999;
-                                                        }
-                                                    }
-
-                                                    break;
-                                                }
-                                            }
-                                        }
-
-                                    }
-
-                                    if (filter != null)
-                                    {
-                                        addOptionItem(filter, min, max, cate_ids, local_exists, lang, optionIdx, dataLabel, itemfilters, special_option, is_deep, hasResistance, ft_type, PS);
-
-                                        attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[lang] && min.WithIn(1, 999) ? min : 0;
-                                        PhysicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
-
-                                        optionIdx++;
-                                        if (firstOption && is_multi_line) break; // break if multi lines
-
-                                    }
-
-                                }
-                            }
-                        }
-                    }
+                    (itemBaseInfo, itemfilters, attackSpeedIncr, PhysicalDamageIncr, map_influenced) = ParseOption(asData, PS, lang, itemType, cate_ids);
 
                     string item_rarity = rarity.Text[0];
                     string item_name = "";
@@ -716,7 +719,7 @@ namespace PoeTradeSearch
                         }
                         else if (!is_unIdentify && cate_ids[0] == "weapon")
                         {
-                            setDPS(
+                            SetDPS(
                                     itemBaseInfo[PS.PhysicalDamage.Text[lang]], itemBaseInfo[PS.ElementalDamage.Text[lang]], itemBaseInfo[PS.ChaosDamage.Text[lang]],
                                     item_quality, itemBaseInfo[PS.AttacksPerSecond.Text[lang]], PhysicalDamageIncr, attackSpeedIncr
                                 );
@@ -731,7 +734,7 @@ namespace PoeTradeSearch
                         string type = btmp ? item_type : mItems[i].Result[cate_idx].Entries[item_idx].Type;
                         cbName.Items.Add(new ItemNames(name, type));
                     }
-                    cbName.SelectedIndex = Helper.selectServerLang(mConfig.Options.ServerType, lang);
+                    cbName.SelectedIndex = Helper.SelectServerLang(mConfig.Options.ServerType, lang);
                     cbName.Tag = cate_ids; //카테고리
 
                     string[] bys = mConfig.Options.AutoSelectByType.ToLower().Split(',');
@@ -781,7 +784,7 @@ namespace PoeTradeSearch
                             cbCorrupt.Foreground = System.Windows.Media.Brushes.DarkRed;
                         }
 
-                        if (is_gem) 
+                        if (is_gem)
                         {
                             ckLv.IsChecked = itemBaseInfo[PS.Level.Text[lang]].IndexOf(" (" + PS.Max.Text[lang]) > 0;
                             ckQuality.IsChecked = item_quality.ToInt(0) > 19;
@@ -793,7 +796,7 @@ namespace PoeTradeSearch
                             ckLv.IsChecked = true;
                             tbLvMin.Text = tbLvMax.Text = itemBaseInfo[PS.AreaLevel.Text[lang]];
                         }
-                        else if(is_Jewel || is_heist || is_map)
+                        else if (is_Jewel || is_heist || is_map)
                         {
                             cbAltQuality.Items.Add(
                                 is_heist ? "모든 강탈 가치" : (
@@ -933,16 +936,17 @@ namespace PoeTradeSearch
 
         private ItemOption GetItemOptions()
         {
-            ItemOption itemOption = new ItemOption();
+            ItemOption itemOption = new ItemOption
+            {
+                LangIndex = cbName.SelectedIndex,
+                Inherits = (string[])cbName.Tag, //카테고리
 
-            itemOption.LangIndex = cbName.SelectedIndex;
-            itemOption.Inherits = (string[])cbName.Tag; //카테고리
+                Name = (cbName.SelectedItem as ItemNames).Name,
+                Type = (cbName.SelectedItem as ItemNames).Type,
 
-            itemOption.Name = (cbName.SelectedItem as ItemNames).Name;
-            itemOption.Type = (cbName.SelectedItem as ItemNames).Type;
-
-            itemOption.Influence1 = cbInfluence1.SelectedIndex;
-            itemOption.Influence2 = cbInfluence2.SelectedIndex;
+                Influence1 = cbInfluence1.SelectedIndex,
+                Influence2 = cbInfluence2.SelectedIndex
+            };
 
             // 영향은 첫번째 값이 우선 순위여야 함
             if (itemOption.Influence1 == 0 && itemOption.Influence2 != 0)

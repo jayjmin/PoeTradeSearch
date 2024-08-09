@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace PoeTradeSearch
@@ -39,7 +36,7 @@ namespace PoeTradeSearch
                 priceThread = new Thread(() =>
                 {
                     UpdatePrice(league, langIndex,
-                            exchange != null ? exchange : new string[1] { CreateJson(itemOptions, true) }, listCount
+                            exchange ?? (new string[1] { CreateJson(itemOptions, true) }), listCount
                         );
 
                     if (mConfig.Options.SearchAutoDelay > 0)
@@ -77,19 +74,13 @@ namespace PoeTradeSearch
 
         private ParserDictItem GetExchangeItem(string id)
         {
-            ParserDictItem item = Array.Find(mParser.Currency.Entries, x => x.Id == id);
-            if (item == null)
-                item = Array.Find(mParser.Exchange.Entries, x => x.Id == id);
-
+            ParserDictItem item = Array.Find(mParser.Currency.Entries, x => x.Id == id) ?? Array.Find(mParser.Exchange.Entries, x => x.Id == id);
             return item;
         }
 
         private ParserDictItem GetExchangeItem(int index, string text)
         {
-            ParserDictItem item = Array.Find(mParser.Currency.Entries, x => x.Text[index] == text);
-            if (item == null)
-                item = Array.Find(mParser.Exchange.Entries, x => x.Text[index] == text);
-
+            ParserDictItem item = Array.Find(mParser.Currency.Entries, x => x.Text[index] == text) ?? Array.Find(mParser.Exchange.Entries, x => x.Text[index] == text);
             return item;
         }
 
@@ -178,8 +169,10 @@ namespace PoeTradeSearch
 
                                 if (json_result != "")
                                 {
-                                    FetchData fetchData = new FetchData();
-                                    fetchData.Result = new FetchInfo[10];
+                                    FetchData fetchData = new FetchData
+                                    {
+                                        Result = new FetchInfo[10]
+                                    };
 
                                     fetchData = Json.Deserialize<FetchData>(json_result);
 

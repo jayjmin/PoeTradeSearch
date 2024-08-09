@@ -65,7 +65,7 @@ namespace PoeTradeSearch
         private ParserData mParser;
         //private ModsDict mMods;
 
-        private FilterData[] mStatic = new FilterData[2];
+        private readonly FilterData[] mStatic = new FilterData[2];
         internal FilterData[] mItems = new FilterData[2];
         internal FilterData[] mFilter = new FilterData[2];
 
@@ -130,8 +130,7 @@ namespace PoeTradeSearch
             }
             finally
             {
-                if (fs != null)
-                    fs.Dispose();
+                fs?.Dispose();
             }
 
             return true;
@@ -370,7 +369,7 @@ namespace PoeTradeSearch
             }
             finally
             {
-                if (fs != null) fs.Dispose();
+                fs?.Dispose();
             }
 
             outString = s;
