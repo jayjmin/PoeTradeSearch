@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using static System.Windows.Forms.AxHost;
@@ -8,6 +9,8 @@ namespace PoeTradeSearch
     public partial class WinMain : Window
     {
         private const int DEFAULT = 99999;
+        private const string PSEUDO_STAT_CHAOS_RES = "pseudo_total_chaos_resistance";
+        private const string PSEUDO_STAT_ELEM_RES = "pseudo_total_elemental_resistance";
 
         private double ValueOrZero(double valueWithDefault)
         {
@@ -112,8 +115,7 @@ namespace PoeTradeSearch
                 }
             }
 
-            int total_elem_res_idx = -1;
-            int total_chaos_res_idx = -1;
+            Dictionary<string, int> pseudoStatIndex = new Dictionary<string, int>();
 
             for (int i = 0; i < 10; i++)
             {
@@ -133,13 +135,13 @@ namespace PoeTradeSearch
                     int elemMulti = PseudoResistanceMultiplierElem(stat);
                     if (elemMulti > 0)
                     {
-                        total_elem_res_idx = UpsertPseudoItemFilter(itemOption, total_elem_res_idx, "pseudo_total_elemental_resistance", i, itemfilter, elemMulti);
+                        pseudoStatIndex = UpsertPseudoItemFilter(itemOption, pseudoStatIndex, PSEUDO_STAT_ELEM_RES, i, itemfilter, elemMulti);
                     }
 
                     int chaosMulti = PseudoResistanceMultiplierChaos(stat);
                     if (chaosMulti > 0)
                     {
-                        total_chaos_res_idx = UpsertPseudoItemFilter(itemOption, total_chaos_res_idx, "pseudo_total_chaos_resistance", i, itemfilter, chaosMulti);
+                        pseudoStatIndex = UpsertPseudoItemFilter(itemOption, pseudoStatIndex, PSEUDO_STAT_CHAOS_RES, i, itemfilter, elemMulti);
                     }
                 }
                 else
@@ -149,45 +151,52 @@ namespace PoeTradeSearch
 
                     if (itemfilter.type == "pseudo" && RS.lPseudo.ContainsKey(itemfilter.stat))
                     {
-                        itemfilter.stat = RS.lPseudo[itemfilter.stat];
-                    }
+                        // Replace with pseudo stat.
+                        itemfilter.min = ValueOrZero(itemfilter.min);
+                        itemfilter.max = ValueOrZero(itemfilter.max);
 
-                    if (itemfilter.flag == "CLUSTER" || itemfilter.flag == "LOGBOOK")
+                        string pseudoStatName = RS.lPseudo[itemfilter.stat];
+                        pseudoStatIndex = UpsertPseudoItemFilter(itemOption, pseudoStatIndex, pseudoStatName, i, itemfilter, 1);
+                    }
+                    else
                     {
-                        itemfilter.option = itemfilter.min;
-                        if (itemfilter.flag == "CLUSTER") itemfilter.min = DEFAULT;
+                        if (itemfilter.flag == "CLUSTER" || itemfilter.flag == "LOGBOOK")
+                        {
+                            itemfilter.option = itemfilter.min;
+                            if (itemfilter.flag == "CLUSTER") itemfilter.min = DEFAULT;
+                        }
+                        itemOption.itemfilters.Add(itemfilter);
                     }
-
-                    itemOption.itemfilters.Add(itemfilter);
                 }
             }
 
-            if (total_elem_res_idx > -1 && itemOption.itemfilters[total_elem_res_idx].max == 0)
-                itemOption.itemfilters[total_elem_res_idx].max = 99999;
-
-            if (total_chaos_res_idx > -1 && itemOption.itemfilters[total_chaos_res_idx].max == 0)
-                itemOption.itemfilters[total_chaos_res_idx].max = 99999;
+            foreach (int pseudoIdx in pseudoStatIndex.Values)
+            {
+                if (itemOption.itemfilters[pseudoIdx].max == 0)
+                    itemOption.itemfilters[pseudoIdx].max = 99999;
+            }
 
             return itemOption;
         }
 
-        private int UpsertPseudoItemFilter(ItemOption itemOption, int pseudoFilterIdx, string pseudoStat, int optionIdx, Itemfilter filter, double multiplier)
+        private Dictionary<string, int> UpsertPseudoItemFilter(ItemOption itemOption, Dictionary<string, int> pseudoStatIndex, string pseudoStatName, int optionIdx, Itemfilter filter, double multiplier)
         {
-            if (pseudoFilterIdx == -1)
+            if (!pseudoStatIndex.ContainsKey(pseudoStatName))
             {
                 Itemfilter pseudoFilter = NewItemFilter(optionIdx);
                 pseudoFilter.type = "pseudo";
-                pseudoFilter.stat = pseudoStat;
+                pseudoFilter.stat = pseudoStatName;
                 pseudoFilter.min = 0;
                 pseudoFilter.max = 0;
-                pseudoFilterIdx = itemOption.itemfilters.Count;
 
                 itemOption.itemfilters.Add(pseudoFilter);
+                pseudoStatIndex[pseudoStatName] = itemOption.itemfilters.Count - 1;
             }
-
+            int pseudoFilterIdx = pseudoStatIndex[pseudoStatName];
             itemOption.itemfilters[pseudoFilterIdx].min += filter.min * multiplier;
             itemOption.itemfilters[pseudoFilterIdx].max += filter.max * multiplier;
-            return pseudoFilterIdx;
+
+            return pseudoStatIndex;
         }
 
         private Itemfilter NewItemFilter(int optionIdx)
