@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using static System.Windows.Forms.AxHost;
 
 namespace PoeTradeSearch
 {
@@ -318,16 +319,23 @@ namespace PoeTradeSearch
             return isOptionStored;
         }
 
-        private bool ImplicitSavedOptionChecked(string ft_type, string selectedType)
+        private bool IsStatRes(string [] split_id)
+        {
+            if (split_id.Length < 2) return false;
+
+            return RS.lResistance.ContainsKey(split_id[1]);
+        }
+
+        private bool ImplicitSavedOptionChecked(string ft_type, string selectedType, string[] split_id)
         {
             // Implicit options are not auto-checked even if the option is included in the saved stat. Allow only for pseudo options.
-            if (ft_type == "implicit" && selectedType == "pseudo")
+            if (ft_type != "implicit")
                 return true;
 
-            if (ft_type == "implicit")
-                return false;
+            if (selectedType == "pseudo" ||  IsStatRes(split_id) )
+                return true;
 
-            return true;
+            return false;
         }
 
         private bool FindSavedItemLevelChecked(string influence, string itemBase)
@@ -440,7 +448,7 @@ namespace PoeTradeSearch
             }
 
             // If pseudo is overwritten for implicit, change the color to allow Saved Checked.
-            if (ft_type == "implicit" && selectedType == "pseudo") {
+            if (ft_type == "implicit" && ImplicitSavedOptionChecked(ft_type, selectedType, split_id)) {
                 SetFilterObjectColor(optionIdx, Brushes.MediumVioletRed);
             }
 
@@ -505,7 +513,7 @@ namespace PoeTradeSearch
             }
             else
             {
-                if (ImplicitSavedOptionChecked(ft_type, selectedType) && (is_deep < 1 || is_deep < 3) && FindSavedOptionChecked(split_id[1], cate_ids[0]))
+                if (ImplicitSavedOptionChecked(ft_type, selectedType, split_id) && (is_deep < 1 || is_deep < 3) && FindSavedOptionChecked(split_id[1], cate_ids[0]))
                 {
                     (FindName("tbOpt" + optionIdx + "_2") as CheckBox).BorderThickness = new Thickness(2);
                     (FindName("tbOpt" + optionIdx + "_2") as CheckBox).IsChecked = true;
