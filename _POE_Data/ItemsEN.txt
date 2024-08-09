@@ -1,7 +1,9 @@
 ﻿{
-    "result": [
+    "result":
+    [
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -2799,7 +2801,8 @@
             "label": "Accessories"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -10885,7 +10888,8 @@
             "label": "Armour"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -14459,7 +14463,8 @@
             "label": "Cards"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -19329,7 +19334,8 @@
             "label": "Currency"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -20007,7 +20013,8 @@
             "label": "Flasks"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -26205,7 +26212,8 @@
             "label": "Gems"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -27795,7 +27803,8 @@
             "label": "Jewels"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -36673,7 +36682,8 @@
             "label": "Maps"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -42111,7 +42121,8 @@
             "label": "Weapons"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -42245,7 +42256,8 @@
             "label": "Leaguestones"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45027,7 +45039,8 @@
             "label": "Itemised Monsters"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45481,7 +45494,8 @@
             "label": "Heist Equipment"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45711,7 +45725,8 @@
             "label": "Heist Mission"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45725,7 +45740,8 @@
             "label": "Expedition Logbooks"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45899,7 +45915,8 @@
             "label": "Sanctum Research"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45937,7 +45954,8 @@
             "label": "Atlas Memories"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -46063,7 +46081,8 @@
             "label": "Tincture"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -46813,5 +46832,5 @@
             "label": "Itemised Corpse"
         }
     ],
-    "update": "2024-08-08T06:31:08Z"
+    "update": "2024-08-09T00:13:48Z"
 }

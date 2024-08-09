@@ -1,7 +1,9 @@
 ﻿{
-    "result": [
+    "result":
+    [
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -2799,7 +2801,8 @@
             "label": "장신구"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -3760,7 +3763,7 @@
                     "text": null,
                     "type": "전신 사슬 갑옷"
                 },
-		{
+                {
                     "disc": null,
                     "id": null,
                     "name": null,
@@ -10885,7 +10888,8 @@
             "label": "방어구"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -14459,7 +14463,8 @@
             "label": "카드"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -19329,7 +19334,8 @@
             "label": "화폐"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -20007,7 +20013,8 @@
             "label": "플라스크"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -26205,7 +26212,8 @@
             "label": "젬"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -27795,7 +27803,8 @@
             "label": "주얼"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -36673,7 +36682,8 @@
             "label": "지도"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -42111,7 +42121,8 @@
             "label": "무기"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -42245,7 +42256,8 @@
             "label": "리그스톤"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45019,7 +45031,8 @@
             "label": "아이템화된 몬스터"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45473,7 +45486,8 @@
             "label": "강탈 장비"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45703,7 +45717,8 @@
             "label": "강탈 임무"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45717,7 +45732,8 @@
             "label": "탐험 일지"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45891,7 +45907,8 @@
             "label": "성역 연구"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -45929,7 +45946,8 @@
             "label": "아틀라스 기억"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -46055,7 +46073,8 @@
             "label": "팅크"
         },
         {
-            "entries": [
+            "entries":
+            [
                 {
                     "disc": null,
                     "id": null,
@@ -46805,5 +46824,5 @@
             "label": "아이템화된 시신"
         }
     ],
-    "update": "2024-08-08T06:31:08Z"
+    "update": "2024-08-09T00:13:48Z"
 }
