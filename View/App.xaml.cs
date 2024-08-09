@@ -33,7 +33,7 @@ namespace PoeTradeSearch
             {
                 File.AppendAllText(
                         mLogFilePath,
-                        String.Format("{0} Error:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace)
+                        string.Format("{0} Error:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace)
                     );
             }
             catch { }
@@ -137,7 +137,7 @@ namespace PoeTradeSearch
             }
             bool createdNew;
             Assembly assembly = Assembly.GetExecutingAssembly();
-            mMutex = new Mutex(true, String.Format(
+            mMutex = new Mutex(true, string.Format(
                     CultureInfo.InvariantCulture, "Local\\{{{0}}}{{{1}}}", assembly.GetType().GUID, assembly.GetName().Name
                 ), out createdNew);
             return !createdNew;

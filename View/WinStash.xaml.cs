@@ -122,7 +122,7 @@ namespace PoeTradeSearch
                     {
                         if (character.league.ToLower() == league)
                         {
-                            u = "https://" + _POE_DOMAIN_ + String.Format(_API_ACCOUNTNAME_, character.name);
+                            u = "https://" + _POE_DOMAIN_ + string.Format(_API_ACCOUNTNAME_, character.name);
                             json = winMain.SendHTTP(null, u, 5, cookie);
                             if ((json ?? "") != "")
                             {
@@ -130,7 +130,7 @@ namespace PoeTradeSearch
                                 @_AccountName = account?.name ?? "";
                                 if (@_AccountName != "")
                                 {
-                                    u = "https://" + _POE_DOMAIN_ + String.Format(_API_STASH_ITEMS_, -1, league, @_AccountName);
+                                    u = "https://" + _POE_DOMAIN_ + string.Format(_API_STASH_ITEMS_, -1, league, @_AccountName);
                                     json = winMain.SendHTTP(null, u, 5, cookie);
                                     if ((json ?? "") != "")
                                     {
@@ -179,13 +179,13 @@ namespace PoeTradeSearch
                     if ((@_NinjaJson[index] ?? "") == "")
                     {
                         string[] ninjadatas = { "DivinationCard", "Fossil", "Essence" };
-                        string u = String.Format(_NINJA_DATA_, winMain.mConfig.Options.League, ninjadatas[index]);
+                        string u = string.Format(_NINJA_DATA_, winMain.mConfig.Options.League, ninjadatas[index]);
                         @_NinjaJson[index] = winMain.SendHTTP(null, u, 5, null);
                     }
 
                     if ((@_NinjaJson[index] ?? "") != "")
                     {
-                        string u = "https://" + _POE_DOMAIN_ + String.Format(_API_STASH_ITEMS_, stashtab.index, league, @_AccountName);
+                        string u = "https://" + _POE_DOMAIN_ + string.Format(_API_STASH_ITEMS_, stashtab.index, league, @_AccountName);
                         string json = winMain.SendHTTP(null, u, 5, cookie);
 
                         if ((json ?? "") != "")

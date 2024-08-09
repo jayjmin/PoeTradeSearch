@@ -254,7 +254,7 @@ namespace PoeTradeSearch
                         if (!quoted)
                         {
                             sb.AppendLine();
-                            sb.Append(new String(INDENT_CHAR, (ch == ',' ? indent : ++indent) * 4));
+                            sb.Append(new string(INDENT_CHAR, (ch == ',' ? indent : ++indent) * 4));
                         }
                         break;
                     case '}':
@@ -262,7 +262,7 @@ namespace PoeTradeSearch
                         if (!quoted)
                         {
                             sb.AppendLine();
-                            sb.Append(new String(INDENT_CHAR, (--indent) * 4));
+                            sb.Append(new string(INDENT_CHAR, (--indent) * 4));
                         }
                         sb.Append(ch);
                         break;

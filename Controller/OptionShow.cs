@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -148,14 +146,26 @@ namespace PoeTradeSearch
                 }
             }
         }
-        
+
         internal void AddItem(int optionIdx, FilterEntrie entrie)
         {
             (FindName("cbOpt" + optionIdx) as ComboBox).Items.Add(entrie);
         }
 
-        internal void AddOptionItem(FilterDictItem filter, double min, double max, string[] cate_ids, bool local_exists,
-            int lang, int optionIdx, string dataLabel, List<Itemfilter> itemfilters, ParserDictItem special_option, int is_deep, bool hasResistance, string ft_type, ParserData PS)
+        internal void AddOptionItem(FilterDictItem filter,
+                                    double min,
+                                    double max,
+                                    string[] cate_ids,
+                                    bool local_exists,
+                                    int lang,
+                                    int optionIdx,
+                                    string dataLabel,
+                                    List<Itemfilter> itemfilters,
+                                    ParserDictItem special_option,
+                                    int is_deep,
+                                    bool hasResistance,
+                                    string ft_type,
+                                    ParserData PS)
         {
             // This fuction adds one search option line in the main box to select min/max value to search.
 
@@ -298,7 +308,6 @@ namespace PoeTradeSearch
 
         private void ItemParser(string itemText, bool isWinShow = true)
         {
-
             // PS stores data loaded from Parser.txt file.
             ParserData PS = mParser;
 
@@ -344,7 +353,6 @@ namespace PoeTradeSearch
                     item_type = ibase_info[3];
 
                     string gem_disc = "";
-                    bool is_blight = false;
 
                     bool is_map = cate_ids[0] == "map"; // || itemBaseInfo[PS.MapTier.Text[langIdx]] != "";
                     bool is_map_fragment = cate_ids.Length > 1 && cate_ids.Join('.') == "map.fragment";
@@ -439,64 +447,7 @@ namespace PoeTradeSearch
                     {
                         FilterDict data = mItems[lang].Result[cate_idx];
 
-                        if ((is_unIdentify || rarity.Id == "normal") && item_type.Length > 4 && item_type.IndexOf(PS.Superior.Text[lang] + " ") == 0)
-                        {
-                            item_type = item_type.Substring(lang == 1 ? 9 : 3);
-                        }
-                        else if (rarity.Id == "magic")
-                        {
-                            item_type = item_type.Split(new string[] { lang == 1 ? " of " : " - " }, StringSplitOptions.None)[0].Trim();
-                        }
-
-                        if (is_map && item_type.Length > 5)
-                        {
-                            if (item_type.Length > 5)
-                            {
-                                if (item_type.IndexOf(PS.Blighted.Text[lang] + " ") == 0)
-                                {
-                                    is_blight = true;
-                                    item_type = item_type.Substring(PS.Blighted.Text[lang].Length + 1);
-                                }
-
-                                if (item_type.IndexOf(PS.Shaped.Text[lang] + " ") == 0)
-                                    item_type = item_type.Substring(PS.Shaped.Text[lang].Length + 1);
-                            }
-                            // 환영 지도면 구분을 위해서 1번 옵션 자동 체크
-                            if (!itemBaseInfo[PS.DeliriumReward.Text[lang]].IsEmpty() && itemfilters.Count > 0)
-                            {
-                                (FindName("tbOpt0_2") as CheckBox).IsChecked = true;
-                                (FindName("tbOpt0_0") as TextBox).Text = "";
-                                itemfilters[0].disabled = false;
-                                itemfilters[0].min = 99999;
-                            }
-                        }
-                        else if (itemBaseInfo[PS.SynthesisedItem.Text[lang]] == "_TRUE_")
-                        {
-                            string[] tmp = PS.SynthesisedItem.Text[lang].Split(' ');
-                            if (item_type.IndexOf(tmp[0] + " ") == 0)
-                                item_type = item_type.Substring(tmp[0].Length + 1);
-                        }
-
-                        if (!is_unIdentify && rarity.Id == "magic")
-                        {
-                            string[] tmp = item_type.Split(' ');
-
-                            if (data != null && tmp.Length > 1)
-                            {
-                                for (int i = 0; i < tmp.Length - 1; i++)
-                                {
-                                    tmp[i] = "";
-                                    string tmp2 = tmp.Join(' ').Trim();
-
-                                    FilterDictItem entries = Array.Find(data.Entries, x => x.Type.Equals(tmp2));
-                                    if (entries != null)
-                                    {
-                                        item_type = entries.Type;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
+                        item_type = OverrideItemType(PS, lang, rarity, itemfilters, itemBaseInfo, item_type, is_map, is_unIdentify, data);
 
                         item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Type == item_type && (rarity.Id != "unique" || x.Name == item_name)));
                     }
@@ -506,18 +457,7 @@ namespace PoeTradeSearch
 
                     if (is_detail || is_map_fragment)
                     {
-                        try
-                        {
-                            int i = is_map_fragment ? 1 : (is_gem ? 3 : 2);
-                            tkDetail.Text = asData.Length > (i + 1) ? asData[i] + asData[i + 1] : asData[asData.Length - 1];
-
-                            tkDetail.Text = Regex.Replace(
-                                tkDetail.Text.Replace(PS.UnstackItems.Text[lang], ""),
-                                "<(uniqueitem|prophecy|divination|gemitem|magicitem|rareitem|whiteitem|corrupted|default|normal|augmented|size:[0-9]+)>",
-                                ""
-                            );
-                        }
-                        catch { }
+                        DispalyDetails(PS, asData, lang, is_map_fragment, is_gem);
                     }
                     else
                     {
@@ -528,24 +468,134 @@ namespace PoeTradeSearch
                         }
                         else if (!is_unIdentify && cate_ids[0] == "weapon")
                         {
-                            SetDPS(
-                                    itemBaseInfo[PS.PhysicalDamage.Text[lang]], itemBaseInfo[PS.ElementalDamage.Text[lang]], itemBaseInfo[PS.ChaosDamage.Text[lang]],
-                                    item_quality, itemBaseInfo[PS.AttacksPerSecond.Text[lang]], PhysicalDamageIncr, attackSpeedIncr
-                                );
+                            SetDPS(itemBaseInfo[PS.PhysicalDamage.Text[lang]],
+                                   itemBaseInfo[PS.ElementalDamage.Text[lang]],
+                                   itemBaseInfo[PS.ChaosDamage.Text[lang]],
+                                   item_quality,
+                                   itemBaseInfo[PS.AttacksPerSecond.Text[lang]],
+                                   PhysicalDamageIncr,
+                                   attackSpeedIncr);
                         }
                     }
+                    bool is_blight = IsBlight(PS, lang, item_type, is_map);
 
-                    DisplayOption(isWinShow, PS, asData, lang, cate_ids, rarity, attackSpeedIncr, PhysicalDamageIncr, itemfilters, itemBaseInfo, map_influenced, item_rarity, item_name, item_type, gem_disc, is_blight, is_map, is_map_fragment, is_map_ultimatum, is_gem, is_Jewel, is_sanctum, is_heist, is_unIdentify, is_detail, item_idx, cate_idx, item_quality, is_gear);
+                    DisplayOption(isWinShow, PS, lang, cate_ids, rarity, itemBaseInfo, map_influenced, item_rarity, item_name, item_type, gem_disc, is_blight, is_map, is_map_ultimatum, is_gem, is_Jewel, is_sanctum, is_heist, is_detail, item_idx, cate_idx, item_quality, is_gear);
                 }
             }
             catch (Exception ex)
             {
                 //Console.WriteLine(ex.Message);
-                ForegroundMessage(String.Format("{0} 에러:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace), "에러", MessageBoxButton.OK, MessageBoxImage.Error);
+                ForegroundMessage(string.Format("{0} 에러:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace), "에러", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void DisplayOption(bool isWinShow, ParserData PS, string[] asData, byte lang, string[] cate_ids, ParserDictItem rarity, double attackSpeedIncr, double PhysicalDamageIncr, List<Itemfilter> itemfilters, Dictionary<string, string> itemBaseInfo, string map_influenced, string item_rarity, string item_name, string item_type, string gem_disc, bool is_blight, bool is_map, bool is_map_fragment, bool is_map_ultimatum, bool is_gem, bool is_Jewel, bool is_sanctum, bool is_heist, bool is_unIdentify, bool is_detail, int item_idx, int cate_idx, string item_quality, bool is_gear)
+
+        private bool IsBlight(ParserData PS, byte lang, string item_type, bool is_map)
+        {
+            if (is_map && item_type.Length > 5 && item_type.IndexOf(PS.Blighted.Text[lang] + " ") == 0)
+                return true;
+
+            return false;
+        }
+
+        private string OverrideItemType(ParserData PS, byte lang, ParserDictItem rarity, List<Itemfilter> itemfilters, Dictionary<string, string> itemBaseInfo, string item_type, bool is_map, bool is_unIdentify, FilterDict data)
+        {
+            if ((is_unIdentify || rarity.Id == "normal") && item_type.Length > 4 && item_type.IndexOf(PS.Superior.Text[lang] + " ") == 0)
+            {
+                item_type = item_type.Substring(lang == 1 ? 9 : 3);
+            }
+            else if (rarity.Id == "magic")
+            {
+                item_type = item_type.Split(new string[] { lang == 1 ? " of " : " - " }, StringSplitOptions.None)[0].Trim();
+            }
+
+            if (is_map && item_type.Length > 5)
+            {
+                if (IsBlight(PS, lang, item_type, is_map))
+                    item_type = item_type.Substring(PS.Blighted.Text[lang].Length + 1);
+
+                if (item_type.IndexOf(PS.Shaped.Text[lang] + " ") == 0)
+                    item_type = item_type.Substring(PS.Shaped.Text[lang].Length + 1);
+
+                // 환영 지도면 구분을 위해서 1번 옵션 자동 체크
+                if (!itemBaseInfo[PS.DeliriumReward.Text[lang]].IsEmpty() && itemfilters.Count > 0)
+                {
+                    (FindName("tbOpt0_2") as CheckBox).IsChecked = true;
+                    (FindName("tbOpt0_0") as TextBox).Text = "";
+                    itemfilters[0].disabled = false;
+                    itemfilters[0].min = 99999;
+                }
+            }
+            else if (itemBaseInfo[PS.SynthesisedItem.Text[lang]] == "_TRUE_")
+            {
+                string[] tmp = PS.SynthesisedItem.Text[lang].Split(' ');
+                if (item_type.IndexOf(tmp[0] + " ") == 0)
+                    item_type = item_type.Substring(tmp[0].Length + 1);
+            }
+
+            if (!is_unIdentify && rarity.Id == "magic")
+            {
+                string[] tmp = item_type.Split(' ');
+
+                if (data != null && tmp.Length > 1)
+                {
+                    for (int i = 0; i < tmp.Length - 1; i++)
+                    {
+                        tmp[i] = "";
+                        string tmp2 = tmp.Join(' ').Trim();
+
+                        FilterDictItem entries = Array.Find(data.Entries, x => x.Type.Equals(tmp2));
+                        if (entries != null)
+                        {
+                            item_type = entries.Type;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return item_type;
+        }
+
+        private void DispalyDetails(ParserData PS, string[] asData, byte lang, bool is_map_fragment, bool is_gem)
+        {
+            try
+            {
+                int i = is_map_fragment ? 1 : (is_gem ? 3 : 2);
+                tkDetail.Text = asData.Length > (i + 1) ? asData[i] + asData[i + 1] : asData[asData.Length - 1];
+
+                tkDetail.Text = Regex.Replace(
+                    tkDetail.Text.Replace(PS.UnstackItems.Text[lang], ""),
+                    "<(uniqueitem|prophecy|divination|gemitem|magicitem|rareitem|whiteitem|corrupted|default|normal|augmented|size:[0-9]+)>",
+                    ""
+                );
+            }
+            catch { }
+        }
+
+        private void DisplayOption(bool isWinShow,
+                                   ParserData PS,
+                                   byte lang,
+                                   string[] cate_ids,
+                                   ParserDictItem rarity,
+                                   Dictionary<string, string> itemBaseInfo,
+                                   string map_influenced,
+                                   string item_rarity,
+                                   string item_name,
+                                   string item_type,
+                                   string gem_disc,
+                                   bool is_blight,
+                                   bool is_map,
+                                   bool is_map_ultimatum,
+                                   bool is_gem,
+                                   bool is_Jewel,
+                                   bool is_sanctum,
+                                   bool is_heist,
+                                   bool is_detail,
+                                   int item_idx,
+                                   int cate_idx,
+                                   string item_quality,
+                                   bool is_gear)
         {
             cbName.Items.Clear();
 

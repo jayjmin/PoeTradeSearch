@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -88,12 +87,12 @@ namespace PoeTradeSearch
             catch (Exception ex)
             {
                 //Console.WriteLine(ex.Message);
-                ForegroundMessage(String.Format("{0} 에러:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace), "에러", MessageBoxButton.OK, MessageBoxImage.Error);
+                ForegroundMessage(string.Format("{0} 에러:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace), "에러", MessageBoxButton.OK, MessageBoxImage.Error);
                 return "";
             }
         }
 
-    private int mAutoSearchTimerCount;
+        private int mAutoSearchTimerCount;
         private void AutoSearchTimer_Tick(object sender, EventArgs e)
         {
             tkPriceInfo.Dispatcher.BeginInvoke(DispatcherPriority.Background, (ThreadStart)delegate ()
@@ -244,7 +243,7 @@ namespace PoeTradeSearch
                                                 else
                                                 {
                                                     liPrice.Items.Add((
-                                                        String.Format(
+                                                        string.Format(
                                                             "{0} [{1}] {2}", (amount + " " + keyName).PadRight(14, '\u2000'), account, GetLapsedTime(indexed).PadRight(10, '\u2000'))
                                                         )
                                                     );
