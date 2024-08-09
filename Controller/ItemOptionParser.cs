@@ -58,102 +58,101 @@ namespace PoeTradeSearch
                             continue;
                         }
 
-                        if (optionIdx < 10 && (!itemBaseInfo[PS.ItemLevel.Text[lang]].IsEmpty() || !itemBaseInfo[PS.MapUltimatum.Text[lang]].IsEmpty()))
+                        if (optionIdx >= 10 || itemBaseInfo[PS.ItemLevel.Text[lang]].IsEmpty() && itemBaseInfo[PS.MapUltimatum.Text[lang]].IsEmpty())
                         {
-                            ParserDictItem special_option = null;
-                            string input = "";
-                            string ft_type = "";
+                            continue;
+                        }
 
-                            string mapInfluenced = ItemParserHelper.FindMapInfluenced(parsedOption, PS, lang, cate_ids);
+                        ParserDictItem special_option = null;
+                        string input = "";
+                        string ft_type = "";
 
-                            if (mapInfluenced != null)
+                        string mapInfluenced = ItemParserHelper.FindMapInfluenced(parsedOption, PS, lang, cate_ids);
+
+                        if (mapInfluenced != null)
+                        {
+                            map_influenced = mapInfluenced;
+                            continue;
+                        }
+
+                        (input, special_option, ft_type) = ItemParserHelper.OptionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
+
+                        input = Regex.Escape(Regex.Replace(input, @"[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+", "#"));
+                        input = Regex.Replace(input, @"\\#", @"[+-]?([0-9]+\.[0-9]+|[0-9]+|\#)");
+
+                        bool local_exists = false;
+                        FilterDictItem filter = null;
+                        string dataLabel = null;
+                        bool hasResistance = false; // 저항
+                        double min = 99999, max = 99999;
+
+                        foreach (FilterDict data_result in mFilter[lang].Result)
+                        {
+                            Regex rgx = new Regex("^" + input + "$", RegexOptions.IgnoreCase);
+                            FilterDictItem[] entries = Array.FindAll(data_result.Entries, x => rgx.IsMatch(x.Text));
+
+                            // "동작 속도 #% 증가" 처럼, 내부적으로는 음수로 계산할 경우를 위해
+                            bool reverseFlag = FindReverseOption(PS, lang, input, data_result, ref entries);
+
+                            // 2개 이상 같은 옵션이 있을때 장비 옵션 (특정) 만 추출
+                            if (entries.Length > 1)
                             {
-                                map_influenced = mapInfluenced;
+                                FilterDictItem[] entries_tmp = Array.FindAll(entries, x => x.Part == cate_ids[0]);
+                                // 화살통 제외
+                                if (entries_tmp.Length > 0 && (cate_ids.Length == 1 || cate_ids[1] != "quiver"))
+                                {
+                                    local_exists = true;
+                                    entries = entries_tmp;
+                                }
+                                else
+                                {
+                                    entries = Array.FindAll(entries, x => x.Part == null);
+                                }
+                            }
+
+                            if (entries.Length == 0)
                                 continue;
-                            }
 
-                            (input, special_option, ft_type) = ItemParserHelper.OptionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
-
-                            input = Regex.Escape(Regex.Replace(input, @"[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+", "#"));
-                            input = Regex.Replace(input, @"\\#", @"[+-]?([0-9]+\.[0-9]+|[0-9]+|\#)");
-
-                            bool local_exists = false;
-                            FilterDictItem filter = null;
-                            string dataLabel = null;
-                            bool hasResistance = false; // 저항
-                            double min = 99999, max = 99999;
-
-                            foreach (FilterDict data_result in mFilter[lang].Result)
+                            Array.Sort(entries, delegate (FilterDictItem entrie1, FilterDictItem entrie2)
                             {
-                                Regex rgx = new Regex("^" + input + "$", RegexOptions.IgnoreCase);
-                                FilterDictItem[] entries = Array.FindAll(data_result.Entries, x => rgx.IsMatch(x.Text));
+                                return (entrie2.Part ?? "").CompareTo(entrie1.Part ?? "");
+                            });
 
-                                // "동작 속도 #% 증가" 처럼, 내부적으로는 음수로 계산할 경우를 위해
-                                bool reverseFlag = FindReverseOption(PS, lang, input, data_result, ref entries);
+                            MatchCollection matches1 = Regex.Matches(parsedOption, @"[-]?([0-9]+\.[0-9]+|[0-9]+)");
+                            foreach (FilterDictItem entrie in entries)
+                            {
+                                string[] split_id = entrie.Id.Split('.');
+                                int excludeId = Array.FindIndex(PS.ExcludeStat.Entries, x => x.Id == split_id[1] && x.Key == cate_ids[0]);
+                                if (excludeId != -1)
+                                    continue; // do not use the stat ID from exclude_stat defined in Parser.txt
 
-                                // 2개 이상 같은 옵션이 있을때 장비 옵션 (특정) 만 추출
-                                if (entries.Length > 1)
+                                if (!FindMinMax(reverseFlag, matches1, entrie, out int idxMin, out int idxMax, out bool isMin, out bool isMax))
+                                    continue;
+
+                                winMain.AddItem(optionIdx, new FilterEntrie(cate_ids[0], split_id[0], split_id[1], data_result.Label));
+
+                                if (filter == null)
                                 {
-                                    FilterDictItem[] entries_tmp = Array.FindAll(entries, x => x.Part == cate_ids[0]);
-                                    // 화살통 제외
-                                    if (entries_tmp.Length > 0 && (cate_ids.Length == 1 || cate_ids[1] != "quiver"))
-                                    {
-                                        local_exists = true;
-                                        entries = entries_tmp;
-                                    }
-                                    else
-                                    {
-                                        entries = Array.FindAll(entries, x => x.Part == null);
-                                    }
+                                    filter = entrie;
+                                    hasResistance = split_id.Length == 2 && RS.lResistance.ContainsKey(split_id[1]);
+                                    UpdateMinMaxValue(out min, out max, reverseFlag, matches1, idxMin, idxMax, isMin, isMax);
                                 }
 
-                                if (entries.Length > 0)
-                                {
-                                    Array.Sort(entries, delegate (FilterDictItem entrie1, FilterDictItem entrie2)
-                                    {
-                                        return (entrie2.Part ?? "").CompareTo(entrie1.Part ?? "");
-                                    });
-
-                                    MatchCollection matches1 = Regex.Matches(parsedOption, @"[-]?([0-9]+\.[0-9]+|[0-9]+)");
-                                    foreach (FilterDictItem entrie in entries)
-                                    {
-                                        string[] split_id = entrie.Id.Split('.');
-                                        int excludeId = Array.FindIndex(PS.ExcludeStat.Entries, x => x.Id == split_id[1] && x.Key == cate_ids[0]);
-                                        if (excludeId != -1)
-                                            continue; // do not use the stat ID from exclude_stat defined in Parser.txt
-
-
-                                        if (FindMinMax(reverseFlag, matches1, entrie, out int idxMin, out int idxMax, out bool isMin, out bool isMax))
-                                        {
-                                            dataLabel = data_result.Label;
-
-                                            winMain.AddItem(optionIdx, new FilterEntrie(cate_ids[0], split_id[0], split_id[1], dataLabel));
-
-                                            if (filter == null)
-                                            {
-                                                filter = entrie;
-                                                hasResistance = split_id.Length == 2 && RS.lResistance.ContainsKey(split_id[1]);
-                                                UpdateMinMaxValue(out min, out max, reverseFlag, matches1, idxMin, idxMax, isMin, isMax);
-                                            }
-
-                                            break;
-                                        }
-                                    }
-                                }
-
+                                break;
                             }
 
-                            if (filter != null)
-                            {
-                                winMain.AddOptionItem(filter, min, max, cate_ids, local_exists, lang, optionIdx, dataLabel, itemfilters, special_option, is_deep, hasResistance, ft_type, PS);
+                        }
 
-                                attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[lang] && min.WithIn(1, 999) ? min : 0;
-                                physicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
+                        if (filter != null)
+                        {
+                            winMain.AddOptionItem(filter, min, max, cate_ids, local_exists, lang, optionIdx, dataLabel, itemfilters, special_option, is_deep, hasResistance, ft_type, PS);
 
-                                optionIdx++;
-                                if (firstOption && is_multi_line) break; // break if multi lines
+                            attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[lang] && min.WithIn(1, 999) ? min : 0;
+                            physicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
 
-                            }
+                            optionIdx++;
+                            if (firstOption && is_multi_line) break; // break if multi lines
+
                         }
                     }
                 }
