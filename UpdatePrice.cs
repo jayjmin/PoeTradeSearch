@@ -117,10 +117,11 @@ namespace PoeTradeSearch
                     }
 
                     /////////////////
-                    /// BREAK POINT - Price Update Error
-                    // If both Korean and English does not work, check this line. Find out what is url_string and json_entity below.
+                    /// DEBUGGING POINT
+                    /// Check here for price update error
+                    /// If both Korean and English does not work, check below - find what is url_string and json_entity.
                     /////////////////
-                    
+
                     string request_result = SendHTTP(json_entity, url_string, mConfig.Options.ServerTimeout);
                     msg = "현재 리그의 거래소 접속이 원활하지 않습니다";
 

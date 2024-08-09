@@ -322,9 +322,6 @@ namespace PoeTradeSearch
                 {
                     sEntity = sEntity.Replace("\"name\":\"" + JQ.Name + "\",", "");
 
-                    /////////////////
-                    /// BREAK POINT 1
-                    /////////////////
                     if (Inherit == "jewel" || itemOptions.ByCategory)
                         sEntity = sEntity.Replace("\"type\":\"" + JQ.Type + "\",", "");
                     else if (Inherit == "prophecy" || JQ.Filters.Type.Filters.Category.Option == "monster.sample")

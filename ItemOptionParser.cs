@@ -325,6 +325,7 @@ namespace PoeTradeSearch
                         { PS.Corrupted.Text[lang], "" }, { PS.Unidentified.Text[lang], "" }, { PS.ProphecyItem.Text[lang], "" }, { PS.Vaal.Text[lang] + " " + ibase_info[3], "" }
                     };
 
+                    // For loop to iterate copied text from the item, parse, and store into data structure
                     // 시즌이 지날수록 땜질을 많이해 점점 복잡지는 소스 언제 정리하지?...
                     for (int i = 1; i < asData.Length; i++)
                     {
@@ -556,7 +557,7 @@ namespace PoeTradeSearch
                     int item_idx = -1;
 
                     ////////////////////////////////
-                    /// BREAK POINT
+                    /// DEBUGGING POINT
                     /// Find item from ItemsKO.txt and ItemsEN.txt
                     ////////////////////////////////
                     // How to debug Korean - English mismatch issue:
@@ -859,10 +860,6 @@ namespace PoeTradeSearch
                         tbLinksMin.Text = socket[1] > 0 ? socket[1].ToString() : "";
                         ckSocket.IsChecked = socket[1] > 4;
                     }
-
-                    ////////////////////////////////////////////
-                    /// BREAK POINT
-                    ////////////////////////////////////////////
 
                     if (is_gear && ckLv.IsChecked == false && cbName.Items.Count == 2)
                     {
