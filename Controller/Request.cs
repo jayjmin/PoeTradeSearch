@@ -109,7 +109,7 @@ namespace PoeTradeSearch
 
             if (itemOptions.itemfilters.Count > 0)
             {
-                error_filter = AddOptionsToJQ(itemOptions, mFilter, JQ, lang_index, Inherit, error_filter);
+                error_filter = AddOptionsToJQ(itemOptions, mFilter, JQ, lang_index, Inherit);
             }
 
             //if (!ckSocket.Dispatcher.CheckAccess())
@@ -144,8 +144,10 @@ namespace PoeTradeSearch
             return (sEntity, error_filter);
         }
 
-        private static bool AddOptionsToJQ(ItemOption itemOptions, FilterData[] mFilter, q_Query JQ, byte lang_index, string Inherit, bool error_filter)
+        private static bool AddOptionsToJQ(ItemOption itemOptions, FilterData[] mFilter, q_Query JQ, byte lang_index, string Inherit)
         {
+            bool error_filter = false;
+
             JQ.Stats = new q_Stats[1];
             JQ.Stats[0] = new q_Stats
             {
@@ -161,46 +163,50 @@ namespace PoeTradeSearch
                 string stat = itemFilter.stat;
                 string type = itemFilter.type;
 
-                if (input.Trim() != "" && RS.lFilterType.ContainsKey(type))
+                if (input.Trim() == "" || !RS.lFilterType.ContainsKey(type))
                 {
-                    string type_name = RS.lFilterType[type];
+                    continue;
+                }
 
-                    FilterDict filterDict = Array.Find(mFilter[lang_index].Result, x => x.Label == type_name);
+                string type_name = RS.lFilterType[type];
 
-                    if (filterDict != null)
-                    {
-                        // 무기에 경우 pseudo_adds_[a-lang]+_damage 옵션은 공격 시 가 붙음
-                        if (Inherit == "weapon" && type == "pseudo" && Regex.IsMatch(stat, @"^pseudo_adds_[a-z]+_damage$"))
-                        {
-                            stat += "_to_attacks";
-                        }
+                FilterDict filterDict = Array.Find(mFilter[lang_index].Result, x => x.Label == type_name);
 
-                        FilterDictItem dicItem = Array.Find(filterDict.Entries, x => x.Id == type + "." + stat);
+                if (filterDict == null)
+                {
+                    continue;
+                }
 
-                        JQ.Stats[0].Filters[idx] = new q_Stats_filters
-                        {
-                            Value = new q_Min_And_Max()
-                        };
+                // 무기에 경우 pseudo_adds_[a-lang]+_damage 옵션은 공격 시 가 붙음
+                if (Inherit == "weapon" && type == "pseudo" && Regex.IsMatch(stat, @"^pseudo_adds_[a-z]+_damage$"))
+                {
+                    stat += "_to_attacks";
+                }
 
-                        if (dicItem != null && (dicItem.Id ?? "").Trim() != "")
-                        {
-                            JQ.Stats[0].Filters[idx].Disabled = itemFilter.disabled == true;
-                            JQ.Stats[0].Filters[idx].Value.Min = itemFilter.min;
-                            JQ.Stats[0].Filters[idx].Value.Max = itemFilter.max;
-                            JQ.Stats[0].Filters[idx].Value.Option = itemFilter.option;
-                            JQ.Stats[0].Filters[idx++].Id = dicItem.Id;
-                        }
-                        else
-                        {
-                            error_filter = true;
-                            itemFilter.isNull = true;
+                FilterDictItem dicItem = Array.Find(filterDict.Entries, x => x.Id == type + "." + stat);
 
-                            // 오류 방지를 위해 널값시 아무거나 추가 
-                            JQ.Stats[0].Filters[idx].Id = "temp_ids";
-                            JQ.Stats[0].Filters[idx].Value.Min = JQ.Stats[0].Filters[idx].Value.Max = 99999;
-                            JQ.Stats[0].Filters[idx++].Disabled = true;
-                        }
-                    }
+                JQ.Stats[0].Filters[idx] = new q_Stats_filters
+                {
+                    Value = new q_Min_And_Max()
+                };
+
+                if (dicItem != null && (dicItem.Id ?? "").Trim() != "")
+                {
+                    JQ.Stats[0].Filters[idx].Disabled = itemFilter.disabled == true;
+                    JQ.Stats[0].Filters[idx].Value.Min = itemFilter.min;
+                    JQ.Stats[0].Filters[idx].Value.Max = itemFilter.max;
+                    JQ.Stats[0].Filters[idx].Value.Option = itemFilter.option;
+                    JQ.Stats[0].Filters[idx++].Id = dicItem.Id;
+                }
+                else
+                {
+                    error_filter = true;
+                    itemFilter.isNull = true;
+
+                    // 오류 방지를 위해 널값시 아무거나 추가 
+                    JQ.Stats[0].Filters[idx].Id = "temp_ids";
+                    JQ.Stats[0].Filters[idx].Value.Min = JQ.Stats[0].Filters[idx].Value.Max = 99999;
+                    JQ.Stats[0].Filters[idx++].Disabled = true;
                 }
             }
 

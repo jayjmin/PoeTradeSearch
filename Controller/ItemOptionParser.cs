@@ -122,11 +122,8 @@ namespace PoeTradeSearch
                                         if (excludeId != -1)
                                             continue; // do not use the stat ID from exclude_stat defined in Parser.txt
 
-                                        int idxMin, idxMax;
-                                        bool isMin, isMax, isMatch;
-                                        FindMinMax(reverseFlag, matches1, entrie, out idxMin, out idxMax, out isMin, out isMax, out isMatch);
 
-                                        if (isMatch)
+                                        if (FindMinMax(reverseFlag, matches1, entrie, out int idxMin, out int idxMax, out bool isMin, out bool isMax))
                                         {
                                             dataLabel = data_result.Label;
 
@@ -136,16 +133,7 @@ namespace PoeTradeSearch
                                             {
                                                 filter = entrie;
                                                 hasResistance = split_id.Length == 2 && RS.lResistance.ContainsKey(split_id[1]);
-                                                if (reverseFlag)
-                                                {
-                                                    max = isMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) * -1 : -99999;
-                                                    min = isMin && idxMax > idxMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) * -1 : 99999;
-                                                }
-                                                else
-                                                {
-                                                    min = isMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) : 99999;
-                                                    max = isMax && idxMin < idxMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) : 99999;
-                                                }
+                                                UpdateMinMaxValue(out min, out max, reverseFlag, matches1, idxMin, idxMax, isMin, isMax);
                                             }
 
                                             break;
@@ -175,6 +163,20 @@ namespace PoeTradeSearch
 
         }
 
+        private static void UpdateMinMaxValue(out double min, out double max, bool reverseFlag, MatchCollection matches1, int idxMin, int idxMax, bool isMin, bool isMax)
+        {
+            if (reverseFlag)
+            {
+                max = isMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) * -1 : -99999;
+                min = isMin && idxMax > idxMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) * -1 : 99999;
+            }
+            else
+            {
+                min = isMin && matches1.Count > idxMin ? ((Match)matches1[idxMin]).Value.ToDouble(99999) : 99999;
+                max = isMax && idxMin < idxMax && matches1.Count > idxMax ? ((Match)matches1[idxMax]).Value.ToDouble(99999) : 99999;
+            }
+        }
+
         private static bool FindReverseOption(ParserData PS, byte lang, string input, FilterDict data_result, ref FilterDictItem[] entries)
         {
             bool reverseFlag = false;
@@ -199,13 +201,12 @@ namespace PoeTradeSearch
             return reverseFlag;
         }
 
-        private static void FindMinMax(bool reverseFlag, MatchCollection matches1, FilterDictItem entrie, out int idxMin, out int idxMax, out bool isMin, out bool isMax, out bool isMatch)
+        private static bool FindMinMax(bool reverseFlag, MatchCollection matches1, FilterDictItem entrie, out int idxMin, out int idxMax, out bool isMin, out bool isMax)
         {
             idxMin = 0;
             idxMax = 0;
             isMin = false;
             isMax = false;
-            isMatch = true;
             MatchCollection matches2 = Regex.Matches(entrie.Text.Split('\n')[0], @"[-]?([0-9]+\.[0-9]+|[0-9]+|#)");
 
             for (int t = 0; t < matches2.Count; t++)
@@ -241,10 +242,11 @@ namespace PoeTradeSearch
                 }
                 else if (matches1[t].Value != matches2[t].Value)
                 {
-                    isMatch = false;
-                    break;
+                    return false;
                 }
             }
+
+            return true;
         }
 
         private static List<string> ParseItemOption(string opts, string tier, ref int is_deep, ref bool is_multi_line)
