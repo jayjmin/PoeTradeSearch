@@ -1,10 +1,76 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace PoeTradeSearch
 {
     internal static class Helper
     {
+
+        public static (string, ParserDictItem, string) OptionToFilter(string parsedOption, ParserData PS, byte lang, Dictionary<string, string> itemBaseInfo, string[] cate_ids, ParserDictItem special_option, string[] asSplit)
+        {
+            string input = parsedOption.RepEx(@"\s(\([a-zA-Z]+\)|—\s.+)$", "");
+            string ft_type = parsedOption.Split(new string[] { "\n" }, 0)[0].RepEx(@"(.+)\s\(([a-zA-Z]+)\)$", "$2");
+            if (!RS.lFilterType.ContainsKey(ft_type)) ft_type = "_none_"; // 영향력 검사???
+
+
+            if (special_option == null)
+            {
+                if (ft_type == "implicit" && cate_ids.Length == 1 && cate_ids[0] == "logbook")
+                {
+                    special_option = Array.Find(PS.Logbook.Entries, x => x.Text[lang] == input);
+                    if (special_option != null)
+                    {
+                        input = PS.Logbook.Text[lang];
+                        special_option.Key = "LOGBOOK";
+                    }
+                }
+                else if (ft_type == "enchant" && asSplit.Length > 1 && cate_ids.Length == 2 && cate_ids[0] == "jewel")
+                {
+                    string tmp2 = input.Split(':')?[1].Trim().RepEx(@"[0-9]+\%", "#%");
+                    special_option = Array.Find(PS.Cluster.Entries, x => x.Text[lang] == tmp2);
+                    if (special_option != null)
+                    {
+                        input = asSplit[0] + ": #";
+                        special_option.Key = "CLUSTER";
+                    }
+                }
+                else if (ft_type == "_none_" && itemBaseInfo[PS.Radius.Text[lang]] != "")
+                {
+                    special_option = Array.Find(PS.Radius.Entries, x => x.Text[lang] == asSplit[0]);
+                    if (special_option != null)
+                    {
+                        itemBaseInfo[PS.Radius.Text[lang]] = RS.lRadius.Entries[special_option.Id.ToInt() - 1].Text[lang];
+                        special_option.Key = "RADIUS";
+                    }
+                }
+            }
+
+            return (input, special_option, ft_type);
+        }
+
+        public static string FindMapInfluenced(string parsedOption, ParserData PS, byte lang, string[] cate_ids)
+        {
+            string input = parsedOption.RepEx(@"\s(\([a-zA-Z]+\)|—\s.+)$", "");
+            string ft_type = parsedOption.Split(new string[] { "\n" }, 0)[0].RepEx(@"(.+)\s\(([a-zA-Z]+)\)$", "$2");
+            if (!RS.lFilterType.ContainsKey(ft_type)) ft_type = "_none_"; // 영향력 검사???
+
+            if (ft_type == "implicit" && cate_ids.Length == 1 && cate_ids[0] == "map")
+            {
+                string pats = "";
+                foreach (ParserDictItem item in PS.MapTier.Entries)
+                {
+                    pats += item.Text[lang] + "|";
+                }
+                Match match = Regex.Match(input.Trim(), "(.+) (" + pats + "_none_)(.*)");
+                if (match.Success)
+                {
+                    return match.Groups[2] + "";
+                }
+            }
+            return null;
+        }
+
         public static int SelectServerLang(int serverTypeConfig, int clientLang)
         {
             // serverTypeConfig: Auto(0), Korean(1), English(2) - check 'cbServerType'
