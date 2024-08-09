@@ -9,6 +9,192 @@ namespace PoeTradeSearch
 {
     public partial class WinMain : Window
     {
+
+        private void Parse(string itemText, bool isWinShow = true)
+        {
+            // PS stores data loaded from Parser.txt file.
+            ParserData PS = mParser;
+
+            try
+            {
+                // asData example:
+                // [0]	"아이템 종류: 반지\r\n아이템 희귀도: 희귀\r\n솔 관절\r\n자수정 반지\r\n"	string
+                // [1]	"\r\n요구사항:\r\n레벨: 64\r\n"	string
+                // [2]	"\r\n아이템 레벨: 85\r\n"	string
+                // [3]	"\r\n카오스 저항 +21% (implicit)\r\n"	string
+                // [4]	"\r\n공격 시 번개 피해 5~61 추가\r\n시전 속도 15% 증가\r\n마나 최대치 +17\r\n화염 저항 +36%\r\n냉기 저항 +38%\r\n비-집중 유지 스킬의 총 마나 소모 -7 (crafted)"  string
+
+                string[] asData = (itemText ?? "").Trim().Split(new string[] { "--------" }, StringSplitOptions.None);
+
+                if (asData.Length <= 1)
+                    return; // no data
+                if (asData[0].IndexOf(PS.Category.Text[0] + ": ") != 0 && asData[0].IndexOf(PS.Category.Text[1] + ": ") != 0)
+                    return; // Unknown Category
+
+                // reset window
+                ResetControls();
+
+                // language. 0: korean, 1: english
+                byte lang = (byte)(asData[0].IndexOf(PS.Category.Text[0] + ": ") == 0 ? 0 : 1);
+
+                // 베이스 찾기: 종류(갑옷, 장갑 등), 희귀도(마법, 희귀 등), 이름, 베이스(자수정 반지) 로 배열이 생성되어 들어감
+                string[] ibase_info = ItemOptionParser.ItemBaseParser(asData[0].Trim().Split(new string[] { "\r\n" }, StringSplitOptions.None));
+
+                ParserDictItem category = Array.Find(PS.Category.Entries, x => x.Text[lang] == ibase_info[0]); // category
+                string[] cate_ids = category != null ? category.Id.Split('.') : new string[] { "" }; // ex) {"id":"armour.chest","key":"armour","text":[ "갑옷", "Body Armours" ]}
+                ParserDictItem rarity = Array.Find(PS.Rarity.Entries, x => x.Text[lang] == ibase_info[1]); // rarity
+                rarity = rarity ?? new ParserDictItem() { Id = "", Text = new string[] { ibase_info[1], ibase_info[1] } }; // ex) {"id":"rare","text":[ "희귀", "Rare" ]}
+                string itemType = ibase_info[3];
+
+                double attackSpeedIncr = 0, PhysicalDamageIncr = 0;
+                List<Itemfilter> itemfilters;
+                Dictionary<string, string> itemBaseInfo;
+                string map_influenced;
+
+                (itemBaseInfo, itemfilters, attackSpeedIncr, PhysicalDamageIncr, map_influenced) = ItemOptionParser.ParseOption(asData, PS, lang, itemType, cate_ids, mFilter, this);
+
+                string item_rarity = rarity.Text[0];
+                string item_name = "";
+                string item_type = "";
+                item_name = ibase_info[2];
+                item_type = ibase_info[3];
+
+                string gem_disc = "";
+
+                bool is_map = cate_ids[0] == "map"; // || itemBaseInfo[PS.MapTier.Text[langIdx]] != "";
+                bool is_map_fragment = cate_ids.Length > 1 && cate_ids.Join('.') == "map.fragment";
+                bool is_map_ultimatum = itemBaseInfo[PS.MapUltimatum.Text[lang]] != "";
+                bool is_prophecy = itemBaseInfo[PS.ProphecyItem.Text[lang]] == "_TRUE_";
+                bool is_memory = cate_ids[0] == "memoryline";
+                bool is_currency = rarity.Id == "currency";
+                bool is_divination_card = rarity.Id == "card";
+                bool is_gem = rarity.Id == "gem";
+                bool is_Jewel = cate_ids[0] == "jewel";
+                bool is_sanctum = cate_ids[0] == "sanctum";
+                bool is_vaal_gem = is_gem && itemBaseInfo[PS.Vaal.Text[lang] + " " + item_type] == "_TRUE_";
+                bool is_heist = itemBaseInfo[PS.Heist.Text[lang]] != "";
+                bool is_unIdentify = itemBaseInfo[PS.Unidentified.Text[lang]] == "_TRUE_";
+                bool is_detail = is_gem || is_map_fragment || is_currency || is_divination_card || is_prophecy;
+
+                if (is_memory)
+                {
+                    item_name = ibase_info[3];
+                    item_type = ibase_info[3];
+                }
+
+                if (is_map_ultimatum || is_sanctum)
+                    is_detail = false;
+
+                int item_idx = -1;
+
+                ////////////////////////////////
+                /// DEBUGGING POINT
+                /// Find item from ItemsKO.txt and ItemsEN.txt
+                ////////////////////////////////
+                // How to debug Korean - English mismatch issue:
+                // 1. Find Id and Key from Parser.txt file. This is the value of "category" here.
+                // 2. Find the same Id from ItemsEN.txt file.
+                // 'Key' from Parser.txt must be equal to 'id' of ItemEN.txt file. If not, update 'Key' in the Parser.txt because ItemEN.txt is updated dynamically from trade site.
+
+                // 정리:
+                // 영문판 Ctrl + C 했을 때 게임에서 복사된 Item Class는 복수 (Jewels) 로 표시됨.
+                // ItemsEN.txt 에는 Id: 단수(jewel) / Key: 복수(jewels)로 표시됨
+                // Parser.txt 에는 Id: 아이템 이름 (jewel.base) / Key: 아이템 종류 (jewel)를 저장함.
+                // 1. Ctrl+C에서 복사된 Item Class를 Parser.txt에서 검색해서 category를 찾음.
+                // 2. category.Key (아이템 종류)를 다시 ItemEN.txt에서 Id로 검색함.
+                // ItemsEN.Key와 Category.Key를 비교하는게 아님.
+
+                int cate_idx = category != null ? Array.FindIndex(mItems[lang].Result, x => x.Id.Equals(category.Key)) : -1;
+
+                if (is_prophecy)
+                {
+                    cate_ids = new string[] { "prophecy" };
+                    item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "prophecy").Text[lang];
+                    item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Type == item_type);
+                }
+                if (is_map_fragment || is_map_ultimatum)
+                {
+                    item_rarity = is_map_ultimatum ? "결전" : Array.Find(PS.Category.Entries, x => x.Id == "map.fragment").Text[lang];
+                    item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Type == item_type);
+                }
+                else if (itemBaseInfo[PS.MonsterGenus.Text[lang]] != "" && itemBaseInfo[PS.MonsterGroup.Text[lang]] != "")
+                {
+                    cate_ids = new string[] { "monster", "beast" };
+                    cate_idx = Array.FindIndex(mItems[lang].Result, x => x.Id.Equals("monsters"));
+                    item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Text == item_type);
+                    item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "monster.beast").Text[lang];
+                    item_type = lang == 1 || item_idx == -1 ? item_type : mItems[1].Result[cate_idx].Entries[item_idx].Type;
+                    item_idx = -1; // 야수는 영어로만 검색됨...
+                }
+                else if (is_gem)
+                {
+                    if (is_vaal_gem && itemBaseInfo[PS.Corrupted.Text[lang]] == "_TRUE_")
+                    {
+                        FilterDict data = mItems[lang].Result[cate_idx];
+                        FilterDictItem entries = Array.Find(data.Entries, x => x.Text.Equals(PS.Vaal.Text[lang] + " " + item_type));
+                        if (entries != null) item_type = entries.Type;
+                    }
+
+                    // Find transfigured gem first: "name" is transfigured gem full name, "type" is the base gem name.
+                    item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Text == item_type));
+
+                    if (item_idx == -1)
+                    {
+                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Type == item_type));
+                    }
+                    else
+                    {
+                        // Transfigured Gem
+                        item_name = item_type;
+                        item_type = mItems[lang].Result[cate_idx].Entries[item_idx].Type;
+                        gem_disc = mItems[lang].Result[cate_idx].Entries[item_idx].Disc;
+                    }
+                }
+                else if (cate_idx > -1)
+                {
+                    FilterDict data = mItems[lang].Result[cate_idx];
+
+                    item_type = OverrideItemType(PS, lang, rarity, itemfilters, itemBaseInfo, item_type, is_map, is_unIdentify, data);
+
+                    item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Type == item_type && (rarity.Id != "unique" || x.Name == item_name)));
+                }
+
+                string item_quality = Regex.Replace(itemBaseInfo[PS.Quality.Text[lang]], "[^0-9]", "");
+                bool is_gear = cate_ids.Length > 1 && cate_ids[0].WithIn("weapon", "armour", "accessory");
+
+                if (is_detail || is_map_fragment)
+                {
+                    DispalyDetails(PS, asData, lang, is_map_fragment, is_gem);
+                }
+                else
+                {
+                    // 장기는 중복 옵션 제거
+                    if (cate_ids.Join('.') == "monster.sample")
+                    {
+                        Deduplicationfilter(itemfilters);
+                    }
+                    else if (!is_unIdentify && cate_ids[0] == "weapon")
+                    {
+                        SetDPS(itemBaseInfo[PS.PhysicalDamage.Text[lang]],
+                               itemBaseInfo[PS.ElementalDamage.Text[lang]],
+                               itemBaseInfo[PS.ChaosDamage.Text[lang]],
+                               item_quality,
+                               itemBaseInfo[PS.AttacksPerSecond.Text[lang]],
+                               PhysicalDamageIncr,
+                               attackSpeedIncr);
+                    }
+                }
+                bool is_blight = IsBlight(PS, lang, item_type, is_map);
+
+                DisplayOption(isWinShow, PS, lang, cate_ids, rarity, itemBaseInfo, map_influenced, item_rarity, item_name, item_type, gem_disc, is_blight, is_map, is_map_ultimatum, is_gem, is_Jewel, is_sanctum, is_heist, is_detail, item_idx, cate_idx, item_quality, is_gear);
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine(ex.Message);
+                ForegroundMessage(string.Format("{0} 에러:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace), "에러", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ResetControls()
         {
             tbLinksMin.Text = "";
@@ -122,7 +308,7 @@ namespace PoeTradeSearch
         }
         private void SetDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
         {
-            lbDPS.Content = Helper.CalcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
+            lbDPS.Content = ItemParserHelper.CalcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
         }
 
         private void Deduplicationfilter(List<Itemfilter> itemfilters)
@@ -306,190 +492,6 @@ namespace PoeTradeSearch
             }
         }
 
-        private void ItemParser(string itemText, bool isWinShow = true)
-        {
-            // PS stores data loaded from Parser.txt file.
-            ParserData PS = mParser;
-
-            try
-            {
-                // asData example:
-                // [0]	"아이템 종류: 반지\r\n아이템 희귀도: 희귀\r\n솔 관절\r\n자수정 반지\r\n"	string
-                // [1]	"\r\n요구사항:\r\n레벨: 64\r\n"	string
-                // [2]	"\r\n아이템 레벨: 85\r\n"	string
-                // [3]	"\r\n카오스 저항 +21% (implicit)\r\n"	string
-                // [4]	"\r\n공격 시 번개 피해 5~61 추가\r\n시전 속도 15% 증가\r\n마나 최대치 +17\r\n화염 저항 +36%\r\n냉기 저항 +38%\r\n비-집중 유지 스킬의 총 마나 소모 -7 (crafted)"  string
-
-                string[] asData = (itemText ?? "").Trim().Split(new string[] { "--------" }, StringSplitOptions.None);
-
-                if (asData.Length > 1 && (asData[0].IndexOf(PS.Category.Text[0] + ": ") == 0 || asData[0].IndexOf(PS.Category.Text[1] + ": ") == 0))
-                {
-                    // reset window
-                    ResetControls();
-
-                    // language. 0: korean, 1: english
-                    byte lang = (byte)(asData[0].IndexOf(PS.Category.Text[0] + ": ") == 0 ? 0 : 1);
-
-                    // 베이스 찾기: 종류(갑옷, 장갑 등), 희귀도(마법, 희귀 등), 이름, 베이스(자수정 반지) 로 배열이 생성되어 들어감
-                    string[] ibase_info = OptionParser.ItemBaseParser(asData[0].Trim().Split(new string[] { "\r\n" }, StringSplitOptions.None));
-
-                    ParserDictItem category = Array.Find(PS.Category.Entries, x => x.Text[lang] == ibase_info[0]); // category
-                    string[] cate_ids = category != null ? category.Id.Split('.') : new string[] { "" }; // ex) {"id":"armour.chest","key":"armour","text":[ "갑옷", "Body Armours" ]}
-                    ParserDictItem rarity = Array.Find(PS.Rarity.Entries, x => x.Text[lang] == ibase_info[1]); // rarity
-                    rarity = rarity ?? new ParserDictItem() { Id = "", Text = new string[] { ibase_info[1], ibase_info[1] } }; // ex) {"id":"rare","text":[ "희귀", "Rare" ]}
-                    string itemType = ibase_info[3];
-
-                    double attackSpeedIncr = 0, PhysicalDamageIncr = 0;
-                    List<Itemfilter> itemfilters;
-                    Dictionary<string, string> itemBaseInfo;
-                    string map_influenced;
-
-                    (itemBaseInfo, itemfilters, attackSpeedIncr, PhysicalDamageIncr, map_influenced) = OptionParser.ParseOption(asData, PS, lang, itemType, cate_ids, mFilter, this);
-
-                    string item_rarity = rarity.Text[0];
-                    string item_name = "";
-                    string item_type = "";
-                    item_name = ibase_info[2];
-                    item_type = ibase_info[3];
-
-                    string gem_disc = "";
-
-                    bool is_map = cate_ids[0] == "map"; // || itemBaseInfo[PS.MapTier.Text[langIdx]] != "";
-                    bool is_map_fragment = cate_ids.Length > 1 && cate_ids.Join('.') == "map.fragment";
-                    bool is_map_ultimatum = itemBaseInfo[PS.MapUltimatum.Text[lang]] != "";
-                    bool is_prophecy = itemBaseInfo[PS.ProphecyItem.Text[lang]] == "_TRUE_";
-                    bool is_memory = cate_ids[0] == "memoryline";
-                    bool is_currency = rarity.Id == "currency";
-                    bool is_divination_card = rarity.Id == "card";
-                    bool is_gem = rarity.Id == "gem";
-                    bool is_Jewel = cate_ids[0] == "jewel";
-                    bool is_sanctum = cate_ids[0] == "sanctum";
-                    bool is_vaal_gem = is_gem && itemBaseInfo[PS.Vaal.Text[lang] + " " + item_type] == "_TRUE_";
-                    bool is_heist = itemBaseInfo[PS.Heist.Text[lang]] != "";
-                    bool is_unIdentify = itemBaseInfo[PS.Unidentified.Text[lang]] == "_TRUE_";
-                    bool is_detail = is_gem || is_map_fragment || is_currency || is_divination_card || is_prophecy;
-
-                    if (is_memory)
-                    {
-                        item_name = ibase_info[3];
-                        item_type = ibase_info[3];
-                    }
-
-                    if (is_map_ultimatum || is_sanctum)
-                        is_detail = false;
-
-                    int item_idx = -1;
-
-                    ////////////////////////////////
-                    /// DEBUGGING POINT
-                    /// Find item from ItemsKO.txt and ItemsEN.txt
-                    ////////////////////////////////
-                    // How to debug Korean - English mismatch issue:
-                    // 1. Find Id and Key from Parser.txt file. This is the value of "category" here.
-                    // 2. Find the same Id from ItemsEN.txt file.
-                    // 'Key' from Parser.txt must be equal to 'id' of ItemEN.txt file. If not, update 'Key' in the Parser.txt because ItemEN.txt is updated dynamically from trade site.
-
-                    // 정리:
-                    // 영문판 Ctrl + C 했을 때 게임에서 복사된 Item Class는 복수 (Jewels) 로 표시됨.
-                    // ItemsEN.txt 에는 Id: 단수(jewel) / Key: 복수(jewels)로 표시됨
-                    // Parser.txt 에는 Id: 아이템 이름 (jewel.base) / Key: 아이템 종류 (jewel)를 저장함.
-                    // 1. Ctrl+C에서 복사된 Item Class를 Parser.txt에서 검색해서 category를 찾음.
-                    // 2. category.Key (아이템 종류)를 다시 ItemEN.txt에서 Id로 검색함.
-                    // ItemsEN.Key와 Category.Key를 비교하는게 아님.
-
-                    int cate_idx = category != null ? Array.FindIndex(mItems[lang].Result, x => x.Id.Equals(category.Key)) : -1;
-
-                    if (is_prophecy)
-                    {
-                        cate_ids = new string[] { "prophecy" };
-                        item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "prophecy").Text[lang];
-                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Type == item_type);
-                    }
-                    if (is_map_fragment || is_map_ultimatum)
-                    {
-                        item_rarity = is_map_ultimatum ? "결전" : Array.Find(PS.Category.Entries, x => x.Id == "map.fragment").Text[lang];
-                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Type == item_type);
-                    }
-                    else if (itemBaseInfo[PS.MonsterGenus.Text[lang]] != "" && itemBaseInfo[PS.MonsterGroup.Text[lang]] != "")
-                    {
-                        cate_ids = new string[] { "monster", "beast" };
-                        cate_idx = Array.FindIndex(mItems[lang].Result, x => x.Id.Equals("monsters"));
-                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => x.Text == item_type);
-                        item_rarity = Array.Find(PS.Category.Entries, x => x.Id == "monster.beast").Text[lang];
-                        item_type = lang == 1 || item_idx == -1 ? item_type : mItems[1].Result[cate_idx].Entries[item_idx].Type;
-                        item_idx = -1; // 야수는 영어로만 검색됨...
-                    }
-                    else if (is_gem)
-                    {
-                        if (is_vaal_gem && itemBaseInfo[PS.Corrupted.Text[lang]] == "_TRUE_")
-                        {
-                            FilterDict data = mItems[lang].Result[cate_idx];
-                            FilterDictItem entries = Array.Find(data.Entries, x => x.Text.Equals(PS.Vaal.Text[lang] + " " + item_type));
-                            if (entries != null) item_type = entries.Type;
-                        }
-
-                        // Find transfigured gem first: "name" is transfigured gem full name, "type" is the base gem name.
-                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Text == item_type));
-
-                        if (item_idx == -1)
-                        {
-                            item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Type == item_type));
-                        }
-                        else
-                        {
-                            // Transfigured Gem
-                            item_name = item_type;
-                            item_type = mItems[lang].Result[cate_idx].Entries[item_idx].Type;
-                            gem_disc = mItems[lang].Result[cate_idx].Entries[item_idx].Disc;
-                        }
-                    }
-                    else if (cate_idx > -1)
-                    {
-                        FilterDict data = mItems[lang].Result[cate_idx];
-
-                        item_type = OverrideItemType(PS, lang, rarity, itemfilters, itemBaseInfo, item_type, is_map, is_unIdentify, data);
-
-                        item_idx = Array.FindIndex(mItems[lang].Result[cate_idx].Entries, x => (x.Type == item_type && (rarity.Id != "unique" || x.Name == item_name)));
-                    }
-
-                    string item_quality = Regex.Replace(itemBaseInfo[PS.Quality.Text[lang]], "[^0-9]", "");
-                    bool is_gear = cate_ids.Length > 1 && cate_ids[0].WithIn("weapon", "armour", "accessory");
-
-                    if (is_detail || is_map_fragment)
-                    {
-                        DispalyDetails(PS, asData, lang, is_map_fragment, is_gem);
-                    }
-                    else
-                    {
-                        // 장기는 중복 옵션 제거
-                        if (cate_ids.Join('.') == "monster.sample")
-                        {
-                            Deduplicationfilter(itemfilters);
-                        }
-                        else if (!is_unIdentify && cate_ids[0] == "weapon")
-                        {
-                            SetDPS(itemBaseInfo[PS.PhysicalDamage.Text[lang]],
-                                   itemBaseInfo[PS.ElementalDamage.Text[lang]],
-                                   itemBaseInfo[PS.ChaosDamage.Text[lang]],
-                                   item_quality,
-                                   itemBaseInfo[PS.AttacksPerSecond.Text[lang]],
-                                   PhysicalDamageIncr,
-                                   attackSpeedIncr);
-                        }
-                    }
-                    bool is_blight = IsBlight(PS, lang, item_type, is_map);
-
-                    DisplayOption(isWinShow, PS, lang, cate_ids, rarity, itemBaseInfo, map_influenced, item_rarity, item_name, item_type, gem_disc, is_blight, is_map, is_map_ultimatum, is_gem, is_Jewel, is_sanctum, is_heist, is_detail, item_idx, cate_idx, item_quality, is_gear);
-                }
-            }
-            catch (Exception ex)
-            {
-                //Console.WriteLine(ex.Message);
-                ForegroundMessage(string.Format("{0} 에러:  {1}\r\n\r\n{2}\r\n\r\n", ex.Source, ex.Message, ex.StackTrace), "에러", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-
         private bool IsBlight(ParserData PS, byte lang, string item_type, bool is_map)
         {
             if (is_map && item_type.Length > 5 && item_type.IndexOf(PS.Blighted.Text[lang] + " ") == 0)
@@ -606,7 +608,7 @@ namespace PoeTradeSearch
                 string type = btmp ? item_type : mItems[langIdx].Result[cate_idx].Entries[item_idx].Type;
                 cbName.Items.Add(new ItemNames(name, type));
             }
-            cbName.SelectedIndex = Helper.SelectServerLang(mConfig.Options.ServerType, lang);
+            cbName.SelectedIndex = ItemParserHelper.SelectServerLang(mConfig.Options.ServerType, lang);
             cbName.Tag = cate_ids; //카테고리
 
             string[] bys = mConfig.Options.AutoSelectByType.ToLower().Split(',');
@@ -742,7 +744,7 @@ namespace PoeTradeSearch
 
             if (itemBaseInfo[PS.Sockets.Text[lang]] != "")
             {
-                int[] socket = OptionParser.SocketParser(itemBaseInfo[PS.Sockets.Text[lang]]);
+                int[] socket = ItemOptionParser.SocketParser(itemBaseInfo[PS.Sockets.Text[lang]]);
                 tbSocketMin.Text = socket[0].ToString();
                 tbLinksMin.Text = socket[1] > 0 ? socket[1].ToString() : "";
                 ckSocket.IsChecked = socket[1] > 4;

@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace PoeTradeSearch
 {
-    internal static class Helper
+    internal static class ItemParserHelper
     {
 
         public static (string, ParserDictItem, string) OptionToFilter(string parsedOption, ParserData PS, byte lang, Dictionary<string, string> itemBaseInfo, string[] cate_ids, ParserDictItem special_option, string[] asSplit)

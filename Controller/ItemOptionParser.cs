@@ -7,11 +7,11 @@ using System.Text.RegularExpressions;
 namespace PoeTradeSearch
 {
     // public partial class WinMain : Window
-    internal static class OptionParser
+    internal static class ItemOptionParser
     {
         internal static (Dictionary<string, string>, List<Itemfilter>, double, double, string) ParseOption(string[] asData, ParserData PS, byte lang, string itemType, string[] cate_ids, FilterData[] mFilter, WinMain winMain)
         {
-            double attackSpeedIncr = 0, PhysicalDamageIncr = 0;
+            double attackSpeedIncr = 0, physicalDamageIncr = 0;
             string map_influenced = "";
 
             List<Itemfilter> itemfilters = new List<Itemfilter>();
@@ -42,7 +42,7 @@ namespace PoeTradeSearch
 
                     int is_deep = -1;
                     bool is_multi_line = false;
-                    List<string> parsedOptions = OptionParser.ItemOptionParser(asOpts[j], PS.OptionTier.Text[lang], ref is_deep, ref is_multi_line);
+                    List<string> parsedOptions = ParseItemOption(asOpts[j], PS.OptionTier.Text[lang], ref is_deep, ref is_multi_line);
 
                     bool firstOption = true;
                     foreach (string parsedOption in parsedOptions)
@@ -64,7 +64,7 @@ namespace PoeTradeSearch
                             string input = "";
                             string ft_type = "";
 
-                            string mapInfluenced = Helper.FindMapInfluenced(parsedOption, PS, lang, cate_ids);
+                            string mapInfluenced = ItemParserHelper.FindMapInfluenced(parsedOption, PS, lang, cate_ids);
 
                             if (mapInfluenced != null)
                             {
@@ -72,7 +72,7 @@ namespace PoeTradeSearch
                                 continue;
                             }
 
-                            (input, special_option, ft_type) = Helper.OptionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
+                            (input, special_option, ft_type) = ItemParserHelper.OptionToFilter(parsedOption, PS, lang, itemBaseInfo, cate_ids, special_option, asSplit);
 
                             input = Regex.Escape(Regex.Replace(input, @"[+-]?[0-9]+\.[0-9]+|[+-]?[0-9]+", "#"));
                             input = Regex.Replace(input, @"\\#", @"[+-]?([0-9]+\.[0-9]+|[0-9]+|\#)");
@@ -87,23 +87,9 @@ namespace PoeTradeSearch
                             {
                                 Regex rgx = new Regex("^" + input + "$", RegexOptions.IgnoreCase);
                                 FilterDictItem[] entries = Array.FindAll(data_result.Entries, x => rgx.IsMatch(x.Text));
+
                                 // "동작 속도 #% 증가" 처럼, 내부적으로는 음수로 계산할 경우를 위해
-                                bool reverseFlag = false;
-                                for (int l = 0; l < PS.ReverseIncreaseDecrease.Entries.Length; l++)
-                                {
-                                    if (input.Contains(PS.ReverseIncreaseDecrease.Entries[l].Text[lang]))
-                                    {
-                                        string input_tmp = Regex.Replace(input, PS.ReverseIncreaseDecrease.Entries[l].Text[lang], PS.ReverseIncreaseDecrease.Entries[l % 2 == 0 ? l + 1 : l - 1].Text[lang]);
-                                        Regex rgx_tmp = new Regex("^" + input_tmp + "$", RegexOptions.IgnoreCase);
-                                        FilterDictItem[] entries_tmp = Array.FindAll(data_result.Entries, x => rgx_tmp.IsMatch(x.Text));
-                                        if (entries_tmp.Length > 0)
-                                        {
-                                            if (entries.Length == 0) reverseFlag = true;
-                                            entries = entries.Concat(entries_tmp).ToArray();
-                                        }
-                                        break;
-                                    }
-                                }
+                                bool reverseFlag = FindReverseOption(PS, lang, input, data_result, ref entries);
 
                                 // 2개 이상 같은 옵션이 있을때 장비 옵션 (특정) 만 추출
                                 if (entries.Length > 1)
@@ -134,51 +120,11 @@ namespace PoeTradeSearch
                                         string[] split_id = entrie.Id.Split('.');
                                         int excludeId = Array.FindIndex(PS.ExcludeStat.Entries, x => x.Id == split_id[1] && x.Key == cate_ids[0]);
                                         if (excludeId != -1)
-                                            continue; // do not use the stat ID from exclude_test defined in Parser.txt
+                                            continue; // do not use the stat ID from exclude_stat defined in Parser.txt
 
-                                        int idxMin = 0, idxMax = 0;
-                                        bool isMin = false, isMax = false;
-                                        bool isMatch = true;
-
-                                        MatchCollection matches2 = Regex.Matches(entrie.Text.Split('\n')[0], @"[-]?([0-9]+\.[0-9]+|[0-9]+|#)");
-
-                                        for (int t = 0; t < matches2.Count; t++)
-                                        {
-                                            if (matches2[t].Value == "#")
-                                            {
-                                                if (reverseFlag)
-                                                {
-                                                    if (!isMax)
-                                                    {
-                                                        isMax = true;
-                                                        idxMax = t;
-                                                    }
-                                                    else if (!isMin)
-                                                    {
-                                                        isMin = true;
-                                                        idxMin = t;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    if (!isMin)
-                                                    {
-                                                        isMin = true;
-                                                        idxMin = t;
-                                                    }
-                                                    else if (!isMax)
-                                                    {
-                                                        isMax = true;
-                                                        idxMax = t;
-                                                    }
-                                                }
-                                            }
-                                            else if (matches1[t].Value != matches2[t].Value)
-                                            {
-                                                isMatch = false;
-                                                break;
-                                            }
-                                        }
+                                        int idxMin, idxMax;
+                                        bool isMin, isMax, isMatch;
+                                        FindMinMax(reverseFlag, matches1, entrie, out idxMin, out idxMax, out isMin, out isMax, out isMatch);
 
                                         if (isMatch)
                                         {
@@ -214,7 +160,7 @@ namespace PoeTradeSearch
                                 winMain.AddOptionItem(filter, min, max, cate_ids, local_exists, lang, optionIdx, dataLabel, itemfilters, special_option, is_deep, hasResistance, ft_type, PS);
 
                                 attackSpeedIncr += filter.Text == PS.AttackSpeedIncr.Text[lang] && min.WithIn(1, 999) ? min : 0;
-                                PhysicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
+                                physicalDamageIncr += filter.Text == PS.PhysicalDamageIncr.Text[lang] && min.WithIn(1, 9999) ? min : 0;
 
                                 optionIdx++;
                                 if (firstOption && is_multi_line) break; // break if multi lines
@@ -225,11 +171,83 @@ namespace PoeTradeSearch
                 }
             }
 
-            return (itemBaseInfo, itemfilters, attackSpeedIncr, PhysicalDamageIncr, map_influenced);
+            return (itemBaseInfo, itemfilters, attackSpeedIncr, physicalDamageIncr, map_influenced);
 
         }
 
-        internal static List<string> ItemOptionParser(string opts, string tier, ref int is_deep, ref bool is_multi_line)
+        private static bool FindReverseOption(ParserData PS, byte lang, string input, FilterDict data_result, ref FilterDictItem[] entries)
+        {
+            bool reverseFlag = false;
+
+            for (int l = 0; l < PS.ReverseIncreaseDecrease.Entries.Length; l++)
+            {
+                if (input.Contains(PS.ReverseIncreaseDecrease.Entries[l].Text[lang]))
+                {
+                    string input_tmp = Regex.Replace(input, PS.ReverseIncreaseDecrease.Entries[l].Text[lang], PS.ReverseIncreaseDecrease.Entries[l % 2 == 0 ? l + 1 : l - 1].Text[lang]);
+                    Regex rgx_tmp = new Regex("^" + input_tmp + "$", RegexOptions.IgnoreCase);
+                    FilterDictItem[] entries_tmp = Array.FindAll(data_result.Entries, x => rgx_tmp.IsMatch(x.Text));
+                    if (entries_tmp.Length > 0)
+                    {
+                        if (entries.Length == 0)
+                            reverseFlag = true;
+                        entries = entries.Concat(entries_tmp).ToArray();
+                    }
+                    break;
+                }
+            }
+
+            return reverseFlag;
+        }
+
+        private static void FindMinMax(bool reverseFlag, MatchCollection matches1, FilterDictItem entrie, out int idxMin, out int idxMax, out bool isMin, out bool isMax, out bool isMatch)
+        {
+            idxMin = 0;
+            idxMax = 0;
+            isMin = false;
+            isMax = false;
+            isMatch = true;
+            MatchCollection matches2 = Regex.Matches(entrie.Text.Split('\n')[0], @"[-]?([0-9]+\.[0-9]+|[0-9]+|#)");
+
+            for (int t = 0; t < matches2.Count; t++)
+            {
+                if (matches2[t].Value == "#")
+                {
+                    if (reverseFlag)
+                    {
+                        if (!isMax)
+                        {
+                            isMax = true;
+                            idxMax = t;
+                        }
+                        else if (!isMin)
+                        {
+                            isMin = true;
+                            idxMin = t;
+                        }
+                    }
+                    else
+                    {
+                        if (!isMin)
+                        {
+                            isMin = true;
+                            idxMin = t;
+                        }
+                        else if (!isMax)
+                        {
+                            isMax = true;
+                            idxMax = t;
+                        }
+                    }
+                }
+                else if (matches1[t].Value != matches2[t].Value)
+                {
+                    isMatch = false;
+                    break;
+                }
+            }
+        }
+
+        private static List<string> ParseItemOption(string opts, string tier, ref int is_deep, ref bool is_multi_line)
         {
             List<string> options = new List<string>();
             string[] tmp = opts.Split(new string[] { "\n" }, 0).Select(x => x.Trim()).ToArray();

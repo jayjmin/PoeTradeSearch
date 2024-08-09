@@ -587,7 +587,7 @@ namespace PoeTradeSearch
             {
                 if (Clipboard.ContainsText(TextDataFormat.UnicodeText) || Clipboard.ContainsText(TextDataFormat.Text))
                 {
-                    ItemParser(GetClipText(Clipboard.ContainsText(TextDataFormat.UnicodeText)), !mShowWiki);
+                    Parse(GetClipText(Clipboard.ContainsText(TextDataFormat.UnicodeText)), !mShowWiki);
                     if (mShowWiki) Button_Click_4(null, new RoutedEventArgs());
                 }
             }

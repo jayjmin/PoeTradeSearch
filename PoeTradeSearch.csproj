@@ -107,14 +107,14 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Controller\OptionRetriever.cs" />
-    <Compile Include="Controller\OptionShow.cs" />
+    <Compile Include="Controller\DisplayItem.cs" />
     <Compile Include="Model\Contracts.cs" />
     <Compile Include="Model\CustomEx.cs" />
     <Compile Include="View\HotkeyBox.xaml.cs">
       <DependentUpon>HotkeyBox.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controller\Helper.cs" />
-    <Compile Include="Controller\OptionParser.cs" />
+    <Compile Include="Controller\ItemParserHelper.cs" />
+    <Compile Include="Controller\ItemOptionParser.cs" />
     <Compile Include="Controller\UpdatePrice.cs" />
     <Compile Include="Controller\Request.cs" />
     <Compile Include="Model\Configure.cs" />
