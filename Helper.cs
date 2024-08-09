@@ -16,8 +16,19 @@ using static System.Net.WebRequestMethods;
 
 namespace PoeTradeSearch
 {
-    internal static class ParserHelper
+    internal static class Helper
     {
+        public static int selectServerLang(int serverTypeConfig, int clientLang)
+        {
+            // serverTypeConfig: Auto(0), Korean(1), English(2) - check 'cbServerType'
+            // clientLang: Korean(0), English(1)
+            if (serverTypeConfig == 1 || serverTypeConfig == 2)
+            {
+                return serverTypeConfig - 1;
+            }
+            return clientLang;
+        }
+
         public static string calcDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
         {
             // DPS 계산 POE-TradeMacro 참고

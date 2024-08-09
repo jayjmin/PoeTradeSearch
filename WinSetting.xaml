@@ -19,13 +19,15 @@
                         <ComboBox Name="cbServerType" HorizontalAlignment="Left" VerticalAlignment="Top" Height="22" Width="106" Margin="108,41,0,0" SelectedIndex="0">
                             <ComboBoxItem>자동</ComboBoxItem>
                             <ComboBoxItem>한국</ComboBoxItem>
-                            <ComboBoxItem>영국</ComboBoxItem>
+                            <ComboBoxItem>글로벌</ComboBoxItem>
                         </ComboBox>
                         <Label Content="자동 검색:" HorizontalAlignment="Left" Margin="10,103,0,0" VerticalAlignment="Top"/>
                         <ComboBox Name="cbSearchAutoDelay" HorizontalAlignment="Left" VerticalAlignment="Top" Height="22" Width="106" Margin="196,107,0,0" SelectedIndex="0">
                             <ComboBoxItem>수동</ComboBoxItem>
-                            <ComboBoxItem>30초</ComboBoxItem>
-                            <ComboBoxItem>60초</ComboBoxItem>
+                            <ComboBoxItem>5초</ComboBoxItem>
+                            <ComboBoxItem>10초</ComboBoxItem>
+                            <ComboBoxItem>15초</ComboBoxItem>
+                            <ComboBoxItem>20초</ComboBoxItem>
                         </ComboBox>
                         <Label Content="검색시 해당 전 날로 검색:" HorizontalAlignment="Left" Margin="10,134,0,0" VerticalAlignment="Top"/>
                         <ComboBox Name="cbSearchBeforeDay" HorizontalAlignment="Left" VerticalAlignment="Top" Height="22" Width="106" Margin="196,138,0,0" SelectedIndex="1">

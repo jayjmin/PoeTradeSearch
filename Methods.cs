@@ -129,7 +129,7 @@ namespace PoeTradeSearch
 
         private void setDPS(string physical, string elemental, string chaos, string quality, string perSecond, double phyDmgIncr, double speedIncr)
         {
-            lbDPS.Content = ParserHelper.calcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
+            lbDPS.Content = Helper.calcDPS(physical, elemental, chaos, quality, perSecond, phyDmgIncr, speedIncr);
         }
 
         private void Deduplicationfilter(List<Itemfilter> itemfilters)

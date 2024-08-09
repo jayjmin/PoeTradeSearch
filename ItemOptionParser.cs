@@ -719,7 +719,7 @@ namespace PoeTradeSearch
                         string type = btmp ? item_type : mItems[i].Result[cate_idx].Entries[item_idx].Type;
                         cbName.Items.Add(new ItemNames(name, type));
                     }
-                    cbName.SelectedIndex = mConfig.Options.ServerType < 1 ? lang : mConfig.Options.ServerType;
+                    cbName.SelectedIndex = Helper.selectServerLang(mConfig.Options.ServerType, lang);
                     cbName.Tag = cate_ids; //카테고리
 
                     string[] bys = mConfig.Options.AutoSelectByType.ToLower().Split(',');

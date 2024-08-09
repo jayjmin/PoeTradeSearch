@@ -58,7 +58,7 @@ namespace PoeTradeSearch
             }
 
             cbServerType.SelectedIndex = winMain.mConfig.Options.ServerType;
-            cbSearchAutoDelay.SelectedIndex = Math.Abs(winMain.mConfig.Options.SearchAutoDelay / 30);
+            cbSearchAutoDelay.SelectedIndex = Math.Abs(winMain.mConfig.Options.SearchAutoDelay / 5);
             cbSearchBeforeDay.SelectedIndex = Math.Abs(winMain.mConfig.Options.SearchBeforeDay / 7);
             cbSearchListCount.SelectedIndex = Math.Abs((winMain.mConfig.Options.SearchListCount / 20) - 1);
 
@@ -90,7 +90,7 @@ namespace PoeTradeSearch
 
             winMain.mConfig.Options.League = (string)cbLeague.SelectedItem;
             winMain.mConfig.Options.ServerType = cbServerType.SelectedIndex;
-            winMain.mConfig.Options.SearchAutoDelay = cbSearchAutoDelay.SelectedIndex * 30;
+            winMain.mConfig.Options.SearchAutoDelay = cbSearchAutoDelay.SelectedIndex * 5;
             winMain.mConfig.Options.SearchBeforeDay = cbSearchBeforeDay.SelectedIndex * 7;
             winMain.mConfig.Options.SearchListCount = (cbSearchListCount.SelectedIndex + 1) * 20;
 
