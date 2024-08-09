@@ -570,7 +570,7 @@ namespace PoeTradeSearch
                     // 'Key' from Parser.txt must be equal to 'id' of ItemEN.txt file. If not, update 'Key' in the Parser.txt because ItemEN.txt is updated dynamically from trade site.
 
                     // 정리:
-                    // 영문판 Ctrl + C 했을 때 게임에서 복사된 Item Class는 복수 (Jewels)로 표시됨.
+                    // 영문판 Ctrl + C 했을 때 게임에서 복사된 Item Class는 복수 (Jewels) 로 표시됨.
                     // ItemsEN.txt 에는 Id: 단수(jewel) / Key: 복수(jewels)로 표시됨
                     // Parser.txt 에는 Id: 아이템 이름 (jewel.base) / Key: 아이템 종류 (jewel)를 저장함.
                     // 1. Ctrl+C에서 복사된 Item Class를 Parser.txt에서 검색해서 category를 찾음.
