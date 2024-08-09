@@ -116,6 +116,11 @@ namespace PoeTradeSearch
                     itemfilters[0].disabled = false;
                 }
             }
+            else if (cate_ids.Length == 1 && cate_ids[0] == "memoryline")
+            {
+                (FindName("tbOpt0_2") as CheckBox).IsChecked = true;
+                itemfilters[0].disabled = false;
+            }
 
             if (Array.Find(mParser.Disable.Entries, x => x.Id.Equals(split_id[1])) != null)
             {
@@ -523,16 +528,8 @@ namespace PoeTradeSearch
                     string item_rarity = rarity.Text[0];
                     string item_name = "";
                     string item_type = "";
-                    if (ibase_info[3].Contains("의 기억")) {
-                        item_name = ibase_info[3];
-                        item_type = ibase_info[3].Substring(0, (ibase_info[3].IndexOf("의 기억") + 4));
-                    }
-                    else
-                    {
-                        item_name = ibase_info[2];
-                        item_type = ibase_info[3];
-                    }
-
+                    item_name = ibase_info[2];
+                    item_type = ibase_info[3];
 
                     string gem_disc = "";
                     bool is_blight = false;
@@ -541,6 +538,7 @@ namespace PoeTradeSearch
                     bool is_map_fragment = cate_ids.Length > 1 && cate_ids.Join('.') == "map.fragment";
                     bool is_map_ultimatum = itemBaseInfo[PS.MapUltimatum.Text[lang]] != "";
                     bool is_prophecy = itemBaseInfo[PS.ProphecyItem.Text[lang]] == "_TRUE_";
+                    bool is_memory = cate_ids[0] == "memoryline";
                     bool is_currency = rarity.Id == "currency";
                     bool is_divination_card = rarity.Id == "card";
                     bool is_gem = rarity.Id == "gem";
@@ -550,6 +548,12 @@ namespace PoeTradeSearch
                     bool is_heist = itemBaseInfo[PS.Heist.Text[lang]] != "";
                     bool is_unIdentify = itemBaseInfo[PS.Unidentified.Text[lang]] == "_TRUE_";
                     bool is_detail = is_gem || is_map_fragment || is_currency || is_divination_card || is_prophecy;
+
+                    if (is_memory)
+                    {
+                        item_name = ibase_info[3];
+                        item_type = ibase_info[3];
+                    }
 
                     if (is_map_ultimatum || is_sanctum)
                         is_detail = false;
@@ -564,6 +568,14 @@ namespace PoeTradeSearch
                     // 1. Find Id and Key from Parser.txt file. This is the value of "category" here.
                     // 2. Find the same Id from ItemsEN.txt file.
                     // 'Key' from Parser.txt must be equal to 'id' of ItemEN.txt file. If not, update 'Key' in the Parser.txt because ItemEN.txt is updated dynamically from trade site.
+
+                    // 정리:
+                    // 영문판 Ctrl + C 했을 때 게임에서 복사된 Item Class는 복수 (Jewels)로 표시됨.
+                    // ItemsEN.txt 에는 Id: 단수(jewel) / Key: 복수(jewels)로 표시됨
+                    // Parser.txt 에는 Id: 아이템 이름 (jewel.base) / Key: 아이템 종류 (jewel)를 저장함.
+                    // 1. Ctrl+C에서 복사된 Item Class를 Parser.txt에서 검색해서 category를 찾음.
+                    // 2. category.Key (아이템 종류)를 다시 ItemEN.txt에서 Id로 검색함.
+                    // ItemsEN.Key와 Category.Key를 비교하는게 아님.
 
                     int cate_idx = category != null ? Array.FindIndex(mItems[lang].Result, x => x.Id.Equals(category.Key)) : -1;
 
