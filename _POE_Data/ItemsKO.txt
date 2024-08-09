@@ -6678,7 +6678,7 @@
                     "name": null,
                     "part": null,
                     "text": null,
-                    "type": "무거언 화살통"
+                    "type": "무거운 화살통(Old)"
                 },
                 {
                     "disc": null,
@@ -6742,7 +6742,7 @@
                     "name": null,
                     "part": null,
                     "text": null,
-                    "type": "원시 화살통"
+                    "type": "무거운 화살통"
                 },
                 {
                     "disc": null,
@@ -6750,7 +6750,7 @@
                     "name": null,
                     "part": null,
                     "text": null,
-                    "type": "무거운 화살통"
+                    "type": "원시 화살통"
                 },
                 {
                     "disc": null,
