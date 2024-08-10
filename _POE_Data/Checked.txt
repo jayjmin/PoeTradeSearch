@@ -44,7 +44,7 @@
         },
         {
             "id": "stat_1671376347",
-            "key": "accessory\/armour\/"
+            "key": "armour\/accessory\/"
         },
         {
             "id": "stat_1546046884",
@@ -56,7 +56,7 @@
         },
         {
             "id": "stat_2901986750",
-            "key": "accessory\/"
+            "key": "accessory\/armour\/"
         },
         {
             "id": "stat_3372524247",
@@ -583,10 +583,6 @@
             "key": "jewel\/"
         },
         {
-            "id": "stat_3032590688",
-            "key": "accessory\/"
-        },
-        {
             "id": "stat_173226756",
             "key": "flask\/"
         },
@@ -621,6 +617,46 @@
         {
             "id": "stat_2618549697",
             "key": "jewel\/"
+        },
+        {
+            "id": "stat_2896192589",
+            "key": "armour\/"
+        },
+        {
+            "id": "stat_3023957681",
+            "key": "armour\/"
+        },
+        {
+            "id": "stat_1506355899",
+            "key": "flask\/"
+        },
+        {
+            "id": "stat_215882879",
+            "key": "flask\/"
+        },
+        {
+            "id": "stat_388617051",
+            "key": "flask\/"
+        },
+        {
+            "id": "stat_3393628375",
+            "key": "accessory\/"
+        },
+        {
+            "id": "stat_378817135",
+            "key": "accessory\/"
+        },
+        {
+            "id": "stat_3032590688",
+            "key": "accessory\/"
+        },
+        {
+            "id": "stat_2254480358",
+            "key": "weapon\/"
+        },
+        {
+            "id": "stat_2915988346",
+            "key": "accessory\/"
         }
     ]
 }
