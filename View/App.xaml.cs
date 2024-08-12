@@ -51,6 +51,27 @@ namespace PoeTradeSearch
             return false;
         }
 
+        private void DownloadExeUpdates(string destFilepath)
+        {
+#if UPGRADE_TEST
+            string srcExePath = System.IO.Path.GetFullPath(@"..\..\") + "_POE_Data\\_POE_EXE.zip";
+            File.Copy(srcExePath, destFilepath, true);
+#else
+            using (var client = new WebClient())
+            {
+                try
+                {
+                    client.DownloadFile(Constants.REMOTE_URL_UPDATE, destFilepath);
+                }
+                catch
+                {
+                    MessageBox.Show("서버 접속이 원할하지 않을 수 있습니다." + '\n' + "다음에 다시 시도해 주세요.", "업데이트 실패");
+                    throw;
+                }
+            }
+#endif
+        }
+
         private void PoeExeUpdates(string path)
         {
             // 마우스 훜시 프로그램에 딜레이가 생겨 쓰레드 처리
@@ -60,22 +81,7 @@ namespace PoeTradeSearch
                 File.Delete(path + "update.cmd");
                 File.Delete(path + "update.dat");
 
-                using (var client = new WebClient())
-                {
-                    try
-                    {
-                        client.DownloadFile(
-                            "https://raw.githubusercontent.com/jayjmin/PoeTradeSearch/master/_POE_Data/_POE_EXE.zip",
-                            path + "poe_exe.zip"
-                        );
-                    }
-                    catch
-                    {
-                        MessageBox.Show("서버 접속이 원할하지 않을 수 있습니다." + '\n' + "다음에 다시 시도해 주세요.", "업데이트 실패");
-                        throw;
-                    }
-                }
-
+                DownloadExeUpdates(path + "poe_exe.zip");
                 if (File.Exists(path + "poe_exe.zip"))
                 {
                     ZipFile.ExtractToDirectory(path + "poe_exe.zip", path);

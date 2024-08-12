@@ -8,6 +8,21 @@ namespace PoeTradeSearch
 {
     public partial class WinMain : Window
     {
+
+        private string GetRemoteVersionString()
+        {
+#if DEBUG
+            return "3.25.0.0\n2024.08.01";
+#endif
+
+#if UPGRADE_TEST
+            string srcExePath = System.IO.Path.GetFullPath(@"..\..\") + "VERSIONS";
+            return File.ReadAllText(srcExePath);
+#else
+            string url = Constants.REMOTE_URL_VERSION;
+            return SendHTTP(null, url, 3);
+#endif
+        }
         private int CheckUpdates(string data_version)
         {
             int isUpdates = 0;
@@ -15,21 +30,20 @@ namespace PoeTradeSearch
             // 마우스 훜시 프로그램에 딜레이가 생겨 쓰레드 처리
             Thread thread = new Thread(() =>
             {
-                string u = "https://raw.githubusercontent.com/naruket/PoeTradeSearchFork/master/VERSIONS";
-                string ver_string = SendHTTP(null, u, 3);
+                string ver_string = GetRemoteVersionString();
                 if ((ver_string ?? "") != "")
                 {
-                    string[] versions = ver_string.Split('\n');
-                    if (versions.Length > 1)
+                    string[] remoteVersions = ver_string.Split('\n');
+                    if (remoteVersions.Length > 1)
                     {
-                        Version version = new Version((string)Application.Current.Properties["FileVersion"]);
-                        isUpdates = version.CompareTo(new Version(versions[0])) < 0 ? 1 : 0;
+                        Version currentVer = new Version((string)Application.Current.Properties["FileVersion"]);
+                        isUpdates = currentVer.CompareTo(new Version(remoteVersions[0])) < 0 ? 1 : 0;
 
                         if (isUpdates == 0)
                         {
                             // POE 데이터 버전 검사
-                            version = new Version(data_version.RepEx(@"T[0-9\:]+Z", "").Replace("-", "."));
-                            isUpdates = version.CompareTo(new Version(versions[1])) < 0 ? 2 : 0;
+                            currentVer = new Version(data_version.RepEx(@"T[0-9\:]+Z", "").Replace("-", "."));
+                            isUpdates = currentVer.CompareTo(new Version(remoteVersions[1])) < 0 ? 2 : 0;
                         }
                     }
                 }
@@ -187,7 +201,7 @@ namespace PoeTradeSearch
             // 마우스 훜시 프로그램에 딜레이가 생겨 쓰레드 처리
             Thread thread = new Thread(() =>
             {
-                string u = "https://raw.githubusercontent.com/jayjmin/PoeTradeSearch/master/_POE_Data/" + filename;
+                string u = Constants.REMOTE_URL_DATA + filename;
                 string v_string = SendHTTP(null, u, 3);
                 if ((v_string ?? "") != "")
                 {
