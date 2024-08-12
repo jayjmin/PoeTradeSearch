@@ -141,7 +141,7 @@ namespace PoeTradeSearch
                     int chaosMulti = PseudoResistanceMultiplierChaos(stat);
                     if (chaosMulti > 0)
                     {
-                        pseudoStatIndex = UpsertPseudoItemFilter(itemOption, pseudoStatIndex, PSEUDO_STAT_CHAOS_RES, i, itemfilter, elemMulti);
+                        pseudoStatIndex = UpsertPseudoItemFilter(itemOption, pseudoStatIndex, PSEUDO_STAT_CHAOS_RES, i, itemfilter, chaosMulti);
                     }
                 }
                 else
