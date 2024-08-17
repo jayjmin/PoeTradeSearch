@@ -133,7 +133,7 @@ namespace PoeTradeSearch
                     if (is_vaal_gem && itemBaseInfo[PS.Corrupted.Text[lang]] == "_TRUE_")
                     {
                         FilterDict data = mItems[lang].Result[cate_idx];
-                        FilterDictItem entries = Array.Find(data.Entries, x => x.Text.Equals(PS.Vaal.Text[lang] + " " + item_type));
+                        FilterDictItem entries = Array.Find(data.Entries, x => x.Type.Equals(PS.Vaal.Text[lang] + " " + item_type));
                         if (entries != null) item_type = entries.Type;
                     }
 
