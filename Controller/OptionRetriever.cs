@@ -174,6 +174,9 @@ namespace PoeTradeSearch
             {
                 if (itemOption.itemfilters[pseudoIdx].max == 0)
                     itemOption.itemfilters[pseudoIdx].max = 99999;
+
+                if (itemOption.itemfilters[pseudoIdx].min == 0)
+                    itemOption.itemfilters[pseudoIdx].min = 99999;
             }
 
             return itemOption;
